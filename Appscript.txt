@@ -22,7 +22,7 @@ const PACOTE_HTML = {
 
 const APP = {
   nome: 'Controle Hora por Hora',
-  versao: '0.7.5',
+  versao: '0.7.6',
 };
 
 const ABAS = {
@@ -1795,7 +1795,18 @@ function montarMaquina_(ctx, maquina, horas) {
     const fim = Util.paraData(h.fim);
     return fim && fim.getTime() <= ctx.agora.getTime();
   });
-  const atual = visiveis.length ? visiveis[visiveis.length - 1] : null;
+  // A hora em andamento entra em visiveis (para o ! e a faixa), mas a
+  // contagem so chega na marca de fechamento. Sem isso o medidor da TV
+  // ficava "--" o turno inteiro.
+  const emAndamento = visiveis.length ? visiveis[visiveis.length - 1] : null;
+  let atual = null;
+  for (let i = visiveis.length - 1; i >= 0; i--) {
+    if (visiveis[i].percentual !== null && visiveis[i].percentual !== undefined) {
+      atual = visiveis[i];
+      break;
+    }
+  }
+  if (!atual) atual = emAndamento;
 
   const janela = visiveis.filter(function (h) {
     return h.minutos.programados > 0 || h.quantidade > 0;
