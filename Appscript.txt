@@ -1585,6 +1585,29 @@ function estaProgramado_(ctx, maquina, instante) {
   return programado;
 }
 
+/**
+ * Minutos programados no dia civil, ja aplicando feriado, maquina fora,
+ * turno extra e motivos planejados da arvore. Usado pelo plano para
+ * ligar as paradas cadastradas as horas disponiveis.
+ */
+function minutosProgramadosDia_(maquina, data, turnos, excecoesDoDia) {
+  const dia = Util.inicioDoDia(data instanceof Date ? data : (Util.paraData(data) || new Date()));
+  const chave = Util.chaveDia(dia);
+  const lista = excecoesDoDia || [];
+  const ctx = {
+    turnos: turnos || [],
+    excecoesPorDia: {},
+    temExcecoes: lista.length > 0,
+  };
+  if (ctx.temExcecoes) ctx.excecoesPorDia[chave] = lista;
+  let n = 0;
+  for (let m = 0; m < 24 * 60; m++) {
+    const instante = new Date(dia.getTime() + m * MS_MINUTO + 30000);
+    if (estaProgramado_(ctx, maquina, instante)) n++;
+  }
+  return n;
+}
+
 
 /* ------------------------------------------------------------- resolucao */
 
@@ -2563,6 +2586,9 @@ const I18n = {
       planoHoras: 'Horas nec.',
       planoSetups: 'Setups',
       planoHorasSetup: 'Horas setup',
+      planoParadas: 'Paradas planejadas',
+      planoHorasDisp: 'Horas disponiveis',
+      planoHorasDispDica: 'Horas de turno menos feriado, maquina fora e paradas planejadas.',
       planoOcupacao: 'Ocupacao maq. %',
       planoTurnos: 'Turnos',
       planoOt: 'OT',
@@ -2598,6 +2624,10 @@ const I18n = {
       planoPinDica: 'Informe o PIN para reabrir o plano congelado.',
       planoPinInvalido: 'PIN incorreto.',
       planoImprimir: 'Imprimir',
+      planoLimpar: 'Limpar plano',
+      planoConfirmarLimpar: 'Apagar itens, quantidades, setups, OT e observacoes desta semana? Os turnos e as paradas planejadas do calendario ficam.',
+      planoLimparTravado: 'Reabra o plano antes de limpar.',
+      planoLimpo: 'Plano limpo. Pode preencher de novo.',
       planoImpressaoTitulo: 'Plano de producao',
       planoAcompanhamento: 'Acompanhamento',
       planoExpandirAcomp: 'Mostrar setups, OT e atingimento',
@@ -2924,6 +2954,9 @@ const I18n = {
       planoHoras: 'Hours needed',
       planoSetups: 'Setups',
       planoHorasSetup: 'Setup hours',
+      planoParadas: 'Planned downtime',
+      planoHorasDisp: 'Available hours',
+      planoHorasDispDica: 'Shift hours minus holidays, machine-out and planned downtime.',
       planoOcupacao: 'Machine occupancy %',
       planoTurnos: 'Shifts',
       planoOt: 'WO',
@@ -2959,6 +2992,10 @@ const I18n = {
       planoPinDica: 'Enter the PIN to reopen the frozen plan.',
       planoPinInvalido: 'Incorrect PIN.',
       planoImprimir: 'Print',
+      planoLimpar: 'Clear plan',
+      planoConfirmarLimpar: 'Clear items, quantities, setups, WO and notes for this week? Shifts and the planned downtime calendar stay.',
+      planoLimparTravado: 'Reopen the plan before clearing it.',
+      planoLimpo: 'Plan cleared. You can fill it in again.',
       planoImpressaoTitulo: 'Production plan',
       planoAcompanhamento: 'Follow-up',
       planoExpandirAcomp: 'Show setups, WO and adherence',
@@ -3285,6 +3322,9 @@ const I18n = {
       planoHoras: 'Horas nec.',
       planoSetups: 'Setups',
       planoHorasSetup: 'Horas setup',
+      planoParadas: 'Paradas planificadas',
+      planoHorasDisp: 'Horas disponibles',
+      planoHorasDispDica: 'Horas de turno menos festivo, maquina fuera y paradas planificadas.',
       planoOcupacao: 'Ocupacion maq. %',
       planoTurnos: 'Turnos',
       planoOt: 'OT',
@@ -3320,6 +3360,10 @@ const I18n = {
       planoPinDica: 'Informe el PIN para reabrir el plan congelado.',
       planoPinInvalido: 'PIN incorrecto.',
       planoImprimir: 'Imprimir',
+      planoLimpar: 'Limpiar plan',
+      planoConfirmarLimpar: 'Borrar items, cantidades, setups, OT y observaciones de esta semana? Los turnos y las paradas planificadas del calendario se mantienen.',
+      planoLimparTravado: 'Reabra el plan antes de limpiar.',
+      planoLimpo: 'Plan limpio. Puede rellenarlo de nuevo.',
       planoImpressaoTitulo: 'Plan de produccion',
       planoAcompanhamento: 'Seguimiento',
       planoExpandirAcomp: 'Mostrar setups, OT y adherencia',
@@ -5937,6 +5981,8 @@ function crc32_(bytes) {
  *
  * A grade declara item, quantidade, setups e turnos por maquina e dia.
  * Horas necessarias = quantidade / (velocidade x uptime meta).
+ * Horas disponiveis = minutos programados do calendario (turnos menos
+ * feriado, maquina fora e paradas planejadas, mais turno extra).
  * Ocupacao nunca passa de 100%. Congelar trava o rascunho para comparar
  * com o realizado.
  */
@@ -6044,6 +6090,34 @@ function apiReabrirPlano(payload) {
   return montarPacotePlano_({ plantaId: plantaId, semanaInicio: semana.inicio });
 }
 
+function apiLimparPlano(payload) {
+  payload = payload || {};
+  garantirAbaPlano_();
+  const plantaId = resolverPlantaPlano_(payload.plantaId);
+  const cfg = configPlano_();
+  const semana = resolverSemanaPlano_(payload.semanaInicio, cfg.inicioSemana);
+  const diaAlvo = String(payload.data || '').trim();
+
+  const linhas = Repo.ler(ABAS.plano).filter(function (l) {
+    if (String(l.planta_id || '').trim() !== plantaId) return false;
+    const d = Util.chaveDia(Util.paraData(l.data) || new Date(0));
+    if (diaAlvo) return d === diaAlvo;
+    return d >= semana.inicio && d <= semana.fim;
+  });
+
+  const livres = linhas.filter(function (l) { return !Util.paraBooleano(l.congelado); });
+  const travadas = linhas.length - livres.length;
+  if (!livres.length) {
+    if (travadas) throw new Error('Reabra o plano antes de limpar.');
+    return montarPacotePlano_({ plantaId: plantaId, semanaInicio: semana.inicio });
+  }
+
+  apagarLinhasPlano_(livres);
+  Repo.limparMemoria();
+  Repo.registrarLog('plano', 'OK', 'limpou ' + (diaAlvo || semana.inicio));
+  return montarPacotePlano_({ plantaId: plantaId, semanaInicio: semana.inicio });
+}
+
 function apiSalvarConfigPlano(payload) {
   payload = payload || {};
   garantirConfigPlano_();
@@ -6125,6 +6199,7 @@ function montarPacotePlano_(opcoes) {
   }
 
   const catalogo = catalogoItensPlano_(itensCad, velocidades, maquinas);
+  const excecoesPorDia = excecoesPorDiaPlano_(plantaId, semana.inicio, semana.fim);
   const celulas = {};
   let algumCongelado = false;
   let todosCongelados = dias.length * maquinas.length > 0;
@@ -6134,7 +6209,8 @@ function montarPacotePlano_(opcoes) {
       const chave = m.id + '|' + dia.iso;
       const linhas = linhasCelulaPlano_(plantaId, m.id, dia.iso);
       const bruta = celulaDeLinhas_(linhas, cfg, dia.weekday, turnos);
-      const calc = calcularCelulaPlano_(bruta, m, cfg, velocidades);
+      const cal = calendarioDiaPlano_(m, dia.iso, turnos, excecoesPorDia[dia.iso] || []);
+      const calc = calcularCelulaPlano_(bruta, m, cfg, velocidades, cal);
       const congelado = celulaCongelada_(linhas);
       if (congelado) algumCongelado = true;
       else todosCongelados = false;
@@ -6152,6 +6228,10 @@ function montarPacotePlano_(opcoes) {
         horasSetup: calc.horasSetup,
         horasProd: calc.horasProd,
         horasDisp: calc.horasDisp,
+        horasParada: calc.horasParada,
+        horasCalendario: cal.horasDisp,
+        turnosPadrao: cal.turnosPadrao,
+        paradasRotulo: cal.paradasRotulo,
         ocupacao: calc.ocupacao,
         realTotal: Math.round(realCel.total),
         realPorItem: realCel.porItem,
@@ -6244,6 +6324,61 @@ function turnosPadraoDoDia_(weekday, turnos) {
     if (t.dias && t.dias.indexOf(weekday) >= 0) n++;
   });
   return n;
+}
+
+function excecoesPorDiaPlano_(plantaId, inicioIso, fimIso) {
+  const mapa = {};
+  const ini = Util.paraData(inicioIso);
+  const fim = Util.paraData(fimIso);
+  if (!ini || !fim) return mapa;
+  Cadastros.excecoes(plantaId).forEach(function (e) {
+    const diaInicio = Util.inicioDoDia(e.data);
+    const diaFim = Util.inicioDoDia(e.dataFim || e.data);
+    const limite = Util.somarDias(diaInicio, 366);
+    for (let d = diaInicio; d <= diaFim && d < limite; d = Util.somarDias(d, 1)) {
+      if (d < ini || d > fim) continue;
+      const chave = Util.chaveDia(d);
+      (mapa[chave] = mapa[chave] || []).push(e);
+    }
+  });
+  return mapa;
+}
+
+function calendarioDiaPlano_(maquina, dataIso, turnosCad, excecoesDoDia) {
+  const data = Util.paraData(dataIso);
+  const weekday = data ? data.getDay() : 0;
+  const lista = excecoesDoDia || [];
+  const extras = lista.filter(function (e) { return e.tipo === TIPO_EXCECAO.turnoExtra; });
+  const minutosBase = minutosProgramadosDia_(maquina, data, turnosCad, extras);
+  const minutosDisp = minutosProgramadosDia_(maquina, data, turnosCad, lista);
+  const partes = [];
+  lista.forEach(function (e) {
+    if (e.tipo === TIPO_EXCECAO.turnoExtra) return;
+    if (e.maquinaId && maquina && e.maquinaId !== maquina.id) return;
+    partes.push(e.descricao || e.tipo);
+  });
+  return {
+    turnosPadrao: turnosPadraoDoDia_(weekday, turnosCad),
+    horasDisp: Math.round((minutosDisp / 60) * 100) / 100,
+    horasParada: Math.round(Math.max(0, minutosBase - minutosDisp) / 60 * 100) / 100,
+    paradasRotulo: partes.join(' \u00b7 '),
+  };
+}
+
+function horasDispOverridePlano_(cal, turnos, cfg) {
+  cal = cal || {};
+  const padrao = cal.turnosPadrao || 0;
+  const parada = cal.horasParada || 0;
+  const horaTurno = (cfg && cfg.horasPorTurno) || 8;
+  const fallback = Math.max(0, (turnos || 0) * horaTurno);
+  const base = cal.horasDisp != null ? cal.horasDisp : fallback;
+  if (turnos == null) return base;
+  if (padrao > 0) {
+    if (Math.abs(turnos - padrao) < 0.05) return base;
+    return Math.max(0, Math.round(base * (turnos / padrao) * 100) / 100);
+  }
+  const manual = Math.max(0, turnos * horaTurno - parada);
+  return Math.max(base, manual);
 }
 
 function catalogoItensPlano_(itensCad, velocidades, maquinas) {
@@ -6350,11 +6485,12 @@ function quantidadeMaximaPlano_(horasLivres, velocidade, uptimePct) {
   return Math.floor(horasLivres * efetiva);
 }
 
-function calcularCelulaPlano_(bruta, maquina, cfg, velocidades) {
+function calcularCelulaPlano_(bruta, maquina, cfg, velocidades, cal) {
   const turnos = Math.max(0, bruta.turnos || 0);
   const setups = Math.max(0, bruta.setups || 0);
-  const horasDisp = turnos * cfg.horasPorTurno;
+  const horasDisp = horasDispOverridePlano_(cal, turnos, cfg);
   const horasSetup = setups * cfg.horasSetup;
+  const horasParada = cal && cal.horasParada ? cal.horasParada : 0;
   const uptime = maquina.uptimeMetaPct || 100;
   const itens = (bruta.itens || []).map(function (it) {
     return {
@@ -6430,6 +6566,7 @@ function calcularCelulaPlano_(bruta, maquina, cfg, velocidades) {
     horasSetup: Math.round(horasSetup * 100) / 100,
     horasProd: Math.round((usadas - horasSetup) * 100) / 100,
     horasDisp: Math.round(horasDisp * 100) / 100,
+    horasParada: Math.round(horasParada * 100) / 100,
     ocupacao: ocupacao,
   };
 }
@@ -6454,7 +6591,11 @@ function normalizarCelulaPlano_(payload, maquina, cfg, dataIso, plantaId) {
   if (bruta.turnos === null) {
     bruta.turnos = turnosPadraoDoDia_(weekday, turnosCad);
   }
-  return calcularCelulaPlano_(bruta, maquina, cfg, velocidades);
+  const cal = calendarioDiaPlano_(
+    maquina, dataIso, turnosCad,
+    (excecoesPorDiaPlano_(plantaId, dataIso, dataIso)[dataIso] || [])
+  );
+  return calcularCelulaPlano_(bruta, maquina, cfg, velocidades, cal);
 }
 
 function gravarCelulaPlano_(plantaId, maquinaId, dataIso, celula, existentes) {
@@ -6668,13 +6809,15 @@ function recalcularSemanaMaquinaPlano_(plantaId, maquinaId, semanaInicio) {
   const maquina = exigirMaquinaPlano_(plantaId, maquinaId);
   const velocidades = Cadastros.velocidades();
   const turnos = Cadastros.turnos(plantaId);
+  const excecoesPorDia = excecoesPorDiaPlano_(plantaId, semana.inicio, semana.fim);
   const inicio = Util.paraData(semana.inicio);
   for (let i = 0; i < 7; i++) {
     const iso = Util.chaveDia(Util.somarDias(inicio, i));
     const existentes = linhasCelulaPlano_(plantaId, maquinaId, iso);
     if (!existentes.length || celulaCongelada_(existentes)) continue;
     const bruta = celulaDeLinhas_(existentes, cfg, Util.paraData(iso).getDay(), turnos);
-    const calc = calcularCelulaPlano_(bruta, maquina, cfg, velocidades);
+    const cal = calendarioDiaPlano_(maquina, iso, turnos, excecoesPorDia[iso] || []);
+    const calc = calcularCelulaPlano_(bruta, maquina, cfg, velocidades, cal);
     calc.ot = bruta.ot;
     calc.observacao = bruta.observacao;
     gravarCelulaPlano_(plantaId, maquinaId, iso, calc, existentes);
