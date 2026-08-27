@@ -2485,8 +2485,13 @@ const I18n = {
       confirmCarregarPadrao: 'Substituir a arvore pela lista padrao de paradas? Motivos com o mesmo caminho (cat. 1, 2 e 3) serao atualizados; os demais serao desativados.',
       csvDicaMotivos: 'Colunas: categoria_1, categoria_2, categoria_3, tipo_1, tipo_2. Virgula, ponto-e-virgula ou tab.',
       csvColunasMotivos: 'categoria_1,categoria_2,categoria_3,tipo_1,tipo_2',
-      csvDicaCalendarioAd: 'Colunas: dia, mes, ano, semana. dia/mes/ano montam a data; semana e a semana Avery. O upload substitui o calendario atual.',
+      csvDicaCalendarioAd: 'Colunas: dia, mes, ano, semana. dia/mes/ano montam a data; semana e a semana Avery.',
       csvColunasCalendarioAd: 'dia,mes,ano,semana',
+      csvDicaCarga: 'Se ja houver cadastro, o sistema pergunta se substitui tudo ou adiciona aos dados existentes.',
+      cargaTitulo: 'Como carregar o arquivo?',
+      cargaTexto: 'Ja existem dados nesta aba. Substituir apaga o cadastro atual e grava so o arquivo. Adicionar mantem o que ja esta e inclui as linhas novas.',
+      cargaSubstituir: 'Substituir tudo',
+      cargaAdicionar: 'Adicionar aos existentes',
       calendarioAdVazio: 'Nenhum calendario Avery carregado. Enquanto isso os relatorios usam semana ISO e mes civil.',
       calendarioAdResumo: '{n} dias · {de} a {ate}',
       buscarParadaArvore: 'Buscar na arvore',
@@ -2888,8 +2893,13 @@ const I18n = {
       confirmCarregarPadrao: 'Replace the tree with the standard downtime list? Rows with the same path (cat. 1, 2 and 3) will be updated; others will be deactivated.',
       csvDicaMotivos: 'Columns: categoria_1, categoria_2, categoria_3, tipo_1, tipo_2. Comma, semicolon or tab.',
       csvColunasMotivos: 'categoria_1,categoria_2,categoria_3,tipo_1,tipo_2',
-      csvDicaCalendarioAd: 'Columns: dia, mes, ano, semana. dia/mes/ano build the date; semana is the Avery week. Upload replaces the current calendar.',
+      csvDicaCalendarioAd: 'Columns: dia, mes, ano, semana. dia/mes/ano build the date; semana is the Avery week.',
       csvColunasCalendarioAd: 'dia,mes,ano,semana',
+      csvDicaCarga: 'If data already exists, the app asks whether to replace everything or add to the current records.',
+      cargaTitulo: 'How should this file be loaded?',
+      cargaTexto: 'This tab already has data. Replace deletes the current records and keeps only the file. Add keeps what is there and includes the new rows.',
+      cargaSubstituir: 'Replace all',
+      cargaAdicionar: 'Add to existing',
       calendarioAdVazio: 'No Avery calendar loaded. Reports keep using ISO week and civil month until then.',
       calendarioAdResumo: '{n} days · {de} to {ate}',
       buscarParadaArvore: 'Search the tree',
@@ -3291,8 +3301,13 @@ const I18n = {
       confirmCarregarPadrao: 'Sustituir el arbol por la lista estandar de paradas? Los motivos con el mismo camino (cat. 1, 2 y 3) se actualizaran; los demas se desactivaran.',
       csvDicaMotivos: 'Columnas: categoria_1, categoria_2, categoria_3, tipo_1, tipo_2. Coma, punto y coma o tab.',
       csvColunasMotivos: 'categoria_1,categoria_2,categoria_3,tipo_1,tipo_2',
-      csvDicaCalendarioAd: 'Columnas: dia, mes, ano, semana. dia/mes/ano arman la fecha; semana es la semana Avery. El archivo sustituye el calendario actual.',
+      csvDicaCalendarioAd: 'Columnas: dia, mes, ano, semana. dia/mes/ano arman la fecha; semana es la semana Avery.',
       csvColunasCalendarioAd: 'dia,mes,ano,semana',
+      csvDicaCarga: 'Si ya hay cadastro, el sistema pregunta si sustituye todo o agrega a los datos existentes.',
+      cargaTitulo: 'Como cargar el archivo?',
+      cargaTexto: 'Ya hay datos en esta pestana. Sustituir borra el cadastro actual y deja solo el archivo. Agregar mantiene lo que ya esta e incluye las filas nuevas.',
+      cargaSubstituir: 'Sustituir todo',
+      cargaAdicionar: 'Agregar a los existentes',
       calendarioAdVazio: 'Ningun calendario Avery cargado. Mientras tanto los informes usan semana ISO y mes civil.',
       calendarioAdResumo: '{n} dias · {de} a {ate}',
       buscarParadaArvore: 'Buscar en el arbol',
@@ -3616,6 +3631,8 @@ function apiImportarVelocidades(payload) {
   }
   if (!parseado.linhas.length) throw new Error('Nenhuma linha valida no arquivo.');
 
+  if (modoCarga_(payload) === 'substituir') limparDadosAba_(ABAS.velocidades);
+
   parseado.linhas.forEach(function (l) {
     garantirItem_(l.item, l.descricao);
     upsertVelocidade_(l.item, l.velocidade);
@@ -3749,8 +3766,8 @@ function apiImportarExcecoes(payload) {
   }
   if (!parseado.linhas.length) throw new Error('Nenhuma linha valida no arquivo.');
 
-  parseado.linhas.forEach(function (l) {
-    persistirExcecao_({
+  const registros = parseado.linhas.map(function (l) {
+    return {
       id: Util.gerarId('X'),
       data: l.data,
       data_fim: l.dataFim,
@@ -3760,8 +3777,14 @@ function apiImportarExcecoes(payload) {
       hora_inicio: l.horaInicio,
       hora_fim: l.horaFim,
       descricao: l.descricao,
-    });
+    };
   });
+
+  if (modoCarga_(payload) === 'substituir') {
+    substituirExcecoesPlanta_(plantaId, registros);
+  } else {
+    registros.forEach(function (r) { persistirExcecao_(r); });
+  }
 
   CachePainel.invalidar();
   Repo.registrarLog(
@@ -3808,6 +3831,7 @@ function apiImportarMotivos(payload) {
     throw new Error(parseado.erros[0]);
   }
   if (!parseado.linhas.length) throw new Error('Nenhuma linha valida no arquivo.');
+  if (modoCarga_(payload) === 'substituir') limparDadosAba_(ABAS.motivos);
   const gravados = gravarMotivosImportados_(parseado.linhas);
   marcarArvorePadraoSeCobre_(Repo.ler(ABAS.motivos));
   CachePainel.invalidar();
@@ -3832,7 +3856,8 @@ function apiImportarCalendarioAd(payload) {
     throw new Error(parseado.erros[0]);
   }
   if (!parseado.linhas.length) throw new Error('Nenhuma linha valida no arquivo.');
-  substituirCalendarioAd_(parseado.linhas);
+  if (modoCarga_(payload) === 'substituir') substituirCalendarioAd_(parseado.linhas);
+  else mesclarCalendarioAd_(parseado.linhas);
   CachePainel.invalidar();
   Repo.registrarLog(
     'cadastro', 'OK',
@@ -3851,7 +3876,9 @@ function apiImportarCalendarioAd(payload) {
 
 function apiCarregarMotivosPadrao(payload) {
   payload = payload || {};
-  const gravados = aplicarArvorePadrao_();
+  const gravados = modoCarga_(payload) === 'adicionar'
+    ? acrescentarArvorePadrao_()
+    : aplicarArvorePadrao_();
   Repo.registrarLog('cadastro', 'OK', 'Arvore padrao de paradas: ' + gravados + ' registros');
   const pacote = montarPacoteCadastros_(payload.plantaId);
   pacote.importacao = { gravados: gravados, ignorados: 0, erros: [], rotulo: 'importadosMotivos' };
@@ -3871,6 +3898,17 @@ function aplicarArvorePadrao_() {
   const gravados = gravarMotivosImportados_(linhas);
   desativarMotivosForaDoPadrao_(linhas);
   gravarConfig_('arvore_paradas_id', ARVORE_PADRAO_ID, 'Identificador da arvore padrao de paradas aplicada');
+  CachePainel.invalidar();
+  Repo.limparMemoria();
+  return gravados;
+}
+
+function acrescentarArvorePadrao_() {
+  const linhas = SEMENTES.motivos.map(function (row) {
+    return registroMotivoDeLinha_(row);
+  });
+  const gravados = gravarMotivosImportados_(linhas);
+  marcarArvorePadraoSeCobre_(Repo.ler(ABAS.motivos));
   CachePainel.invalidar();
   Repo.limparMemoria();
   return gravados;
@@ -3956,6 +3994,20 @@ function gravarConfig_(chave, valor, descricao) {
     valor: valor,
     descricao: descricao || '',
   }]);
+}
+
+function modoCarga_(payload) {
+  const m = String(payload && payload.modo != null ? payload.modo : '').trim().toLowerCase();
+  if (m === 'substituir' || m === 'replace' || m === 'substituir_tudo') return 'substituir';
+  return 'adicionar';
+}
+
+function limparDadosAba_(nome) {
+  const aba = Repo.aba(nome, true);
+  const ultima = aba.getLastRow();
+  if (ultima > 1) aba.deleteRows(2, ultima - 1);
+  Repo.limparMemoria();
+  if (Repo.descarregar) Repo.descarregar();
 }
 
 
@@ -4126,6 +4178,29 @@ function persistirExcecao_(registro) {
   const existente = localizarPorCampo_(ABAS.excecoes, 'id', registro.id);
   if (existente) Repo.atualizarRegistro(ABAS.excecoes, existente._linha, registro);
   else Repo.acrescentar(ABAS.excecoes, [registro]);
+}
+
+function substituirExcecoesPlanta_(plantaId, registros) {
+  const outras = Repo.ler(ABAS.excecoes)
+    .filter(function (l) {
+      return String(l.planta_id || '').trim() !== plantaId;
+    })
+    .map(function (l) {
+      return {
+        id: l.id,
+        data: l.data,
+        data_fim: l.data_fim,
+        planta_id: l.planta_id,
+        maquina_id: l.maquina_id,
+        tipo: l.tipo,
+        hora_inicio: l.hora_inicio,
+        hora_fim: l.hora_fim,
+        descricao: l.descricao,
+      };
+    });
+  limparDadosAba_(ABAS.excecoes);
+  const juntos = outras.concat(registros || []);
+  if (juntos.length) Repo.acrescentar(ABAS.excecoes, juntos);
 }
 
 function upsertVelocidade_(item, velocidade) {
@@ -8050,6 +8125,39 @@ function substituirCalendarioAd_(registros) {
   if (ordenados.length) {
     Repo.acrescentar(ABAS.calendarioAd, ordenados);
   }
+}
+
+function mesclarRegistrosCalendarioAd_(atuais, novos) {
+  const mapa = {};
+  (atuais || []).concat(novos || []).forEach(function (r) {
+    const k = chaveDataCalendarioAd_(r);
+    if (!k) return;
+    mapa[k] = {
+      data: k,
+      dia: r.dia,
+      mes: r.mes,
+      ano: r.ano,
+      semana: r.semana,
+    };
+  });
+  return ordenarRegistrosCalendarioAd_(Object.keys(mapa).map(function (k) { return mapa[k]; }));
+}
+
+function mesclarCalendarioAd_(registros) {
+  garantirCalendarioAd_();
+  const atuais = Repo.ler(ABAS.calendarioAd).map(function (l) {
+    const dataIso = l.data && l.data.getFullYear
+      ? Util.chaveDia(l.data)
+      : String(l.data || '');
+    return {
+      data: dataIso,
+      dia: l.dia,
+      mes: l.mes,
+      ano: l.ano,
+      semana: l.semana,
+    };
+  });
+  substituirCalendarioAd_(mesclarRegistrosCalendarioAd_(atuais, registros));
 }
 
 function ordenarRegistrosCalendarioAd_(registros) {
