@@ -841,11 +841,16 @@ const Cadastros = {
       .filter(function (e) { return e && (!plantaId || !e.plantaId || e.plantaId === plantaId); });
   },
 
+  /**
+   * Catalogo completo, inclusive inativos. O cadastro mostra a pasta mesmo
+   * quando a folha esta desligada; o justificar precisa da mesma lista.
+   * O lookup de eventos antigos tambem precisa do motivo depois de inativar.
+   */
   motivos() {
     const mapa = {};
     Repo.ler(ABAS.motivos).forEach(function (m) {
-      if (!Util.paraBooleano(m.ativo)) return;
       const id = String(m.id).trim();
+      if (!id) return;
       mapa[id] = {
         id: id,
         descricao: String(m.descricao || id),
@@ -854,6 +859,7 @@ const Cadastros = {
         tipo1: String(m.tipo1 || ''),
         tipo2: String(m.tipo2 || ''),
         planejada: Util.paraBooleano(m.planejada),
+        ativo: Util.paraBooleano(m.ativo),
       };
     });
     return mapa;
@@ -5295,14 +5301,20 @@ function catalogoItensChao_(itensMapa) {
 }
 
 function catalogoMotivosChao_(motivosMapa) {
-  return Object.keys(motivosMapa).map(function (id) {
-    const m = motivosMapa[id];
+  let lista;
+  if (typeof listarMotivosCadastro_ === 'function') {
+    lista = listarMotivosCadastro_().filter(function (m) { return m.id; });
+  } else {
+    lista = Object.keys(motivosMapa || {}).map(function (id) { return motivosMapa[id]; });
+  }
+  return lista.map(function (m) {
     return {
       id: m.id,
       descricao: m.descricao,
       categoria: m.categoria,
       categoria2: m.categoria2 || '',
       planejada: !!m.planejada,
+      ativo: m.ativo !== false,
     };
   }).sort(function (a, b) {
     const c1 = (a.categoria || '').localeCompare(b.categoria || '');
