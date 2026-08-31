@@ -21,7 +21,7 @@ const PACOTE_HTML = {
 
 const APP = {
   nome: 'Controle Hora por Hora',
-  versao: '0.8.22',
+  versao: '0.8.23',
 };
 
 /** Marca a arvore do CSV na planilha; se mudar o catalogo, suba este id. */
