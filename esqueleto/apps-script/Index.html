@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <?!= include('Estilos'); ?>
+</head>
+
+<body>
+  <div class="casca" id="casca">
+
+    <aside class="lateral">
+      <div class="marca">
+        <div class="marca-linha">
+          <div class="marca-logo" role="img" aria-label="Avery Dennison"></div>
+          <button type="button" class="botao botao-sidebar" id="botao-sidebar" title="Recolher menu"></button>
+        </div>
+        <div class="marca-textos">
+          <div class="marca-nome" id="marca-nome">Esqueleto Avery</div>
+          <div class="marca-sub" id="marca-sub">Base visual para um codigo novo</div>
+        </div>
+      </div>
+
+      <div class="cartao-usuario">
+        <div class="avatar" id="usuario-iniciais">--</div>
+        <div class="usuario-dados">
+          <div class="usuario-nome" id="usuario-nome">Carregando</div>
+          <div class="usuario-papel" id="usuario-planta">&nbsp;</div>
+        </div>
+      </div>
+
+      <nav id="nav"></nav>
+
+      <div id="caixa-pendencias" class="caixa-pendencias"></div>
+
+      <div class="lateral-rodape">
+        <div id="rodape-versao">&nbsp;</div>
+        <div id="rodape-fonte">&nbsp;</div>
+      </div>
+    </aside>
+
+    <main class="principal">
+      <header class="topo">
+        <div>
+          <div class="topo-titulo" id="topo-titulo">&nbsp;</div>
+          <div class="topo-sub" id="topo-sub">&nbsp;</div>
+        </div>
+
+        <div class="topo-direita">
+          <span class="pilula" id="pilula-estado">
+            <span class="ponto"></span><span id="pilula-texto">&nbsp;</span>
+          </span>
+          <div class="seletor-idioma" id="seletor-idioma" role="group"></div>
+          <button class="botao" id="botao-tela" title="Tela cheia"></button>
+          <button class="botao primario" id="botao-atualizar"></button>
+        </div>
+      </header>
+
+      <div class="nav-topo" id="nav-topo"></div>
+
+      <div class="area-conteudo">
+        <div class="conteudo" id="conteudo">
+          <div class="esqueleto" style="height:110px;margin-bottom:16px"></div>
+          <div class="esqueleto" style="height:280px"></div>
+        </div>
+      </div>
+    </main>
+
+  </div>
+
+  <script>
+    var PARAMETROS = <?!= JSON.stringify(parametros) ?>;
+  </script>
+  <?!= include('App'); ?>
+</body>
+</html>
