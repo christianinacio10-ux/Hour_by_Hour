@@ -21,7 +21,7 @@ const PACOTE_HTML = {
 
 const APP = {
   nome: 'Controle Hora por Hora',
-  versao: '0.8.28',
+  versao: '0.8.29',
 };
 
 /** Marca a arvore do CSV na planilha; se mudar o catalogo, suba este id. */
@@ -315,6 +315,17 @@ const Util = {
 
     const solto = new Date(texto);
     return isNaN(solto.getTime()) ? null : solto;
+  },
+
+  /**
+   * Fim de evento de apontamento. Celula vazia, zero e a data sentinela
+   * do Sheets (30/12/1899, celula de data em branco) significam aberto.
+   */
+  fimDeEvento(valor) {
+    if (valor === 0 || valor === '0') return null;
+    const d = this.paraData(valor);
+    if (!d || d.getFullYear() < 1990) return null;
+    return d;
   },
 
   /**
@@ -905,7 +916,7 @@ const Cadastros = {
           itemCodigo: String(e.item_codigo || '').trim(),
           ordemProducao: String(e.ordem_producao || '').trim(),
           inicio: ini,
-          fim: Util.paraData(e.fim),
+          fim: Util.fimDeEvento(e.fim),
           motivoId: String(e.motivo_id || '').trim(),
           operador: String(e.operador || ''),
           observacao: String(e.observacao || ''),
@@ -938,7 +949,51 @@ const Cadastros = {
       const primeira = Util.paraData(linhas[0].inicio);
       if (primeira && primeira > inicio) return Repo.ler(ABAS.eventos);
     }
-    return linhas;
+    return this.mesclarEventosAbertos_(linhas);
+  },
+
+  /**
+   * Producao aberta pode ter comecado meses atras; a cauda recente nao
+   * traz essa linha e o chao marcava a maquina ociosa com o item ainda
+   * declarado. Recoloca so os eventos sem fim real.
+   */
+  mesclarEventosAbertos_(linhas) {
+    const vistos = {};
+    for (let i = 0; i < linhas.length; i++) {
+      vistos[String(linhas[i].id).trim()] = true;
+    }
+    const extra = this.lerEventosAbertosFora_(vistos);
+    if (!extra.length) return linhas;
+    return linhas.concat(extra);
+  },
+
+  lerEventosAbertosFora_(vistos) {
+    if (Repo._memoria[ABAS.eventos]) {
+      return Repo._memoria[ABAS.eventos].filter(function (e) {
+        return !Util.fimDeEvento(e.fim) && !vistos[String(e.id).trim()];
+      });
+    }
+
+    const aba = Repo.aba(ABAS.eventos);
+    const ultima = aba.getLastRow();
+    if (ultima < 2) return [];
+
+    const colunas = ESQUEMA[ABAS.eventos];
+    const colId = colunas.indexOf('id') + 1;
+    const colFim = colunas.indexOf('fim') + 1;
+    const ids = aba.getRange(2, colId, ultima - 1, 1).getValues();
+    const fins = aba.getRange(2, colFim, ultima - 1, 1).getValues();
+    const extra = [];
+    for (let i = 0; i < fins.length; i++) {
+      const id = String(ids[i][0] || '').trim();
+      if (!id || vistos[id] || Util.fimDeEvento(fins[i][0])) continue;
+      const linha = i + 2;
+      const valores = aba.getRange(linha, 1, 1, colunas.length).getValues()[0];
+      const obj = { _linha: linha };
+      colunas.forEach(function (c, idx) { obj[c] = valores[idx]; });
+      extra.push(obj);
+    }
+    return extra;
   },
 
   /** Producao horaria indexada por "codigoMaquina|chaveHora". */
@@ -5061,7 +5116,7 @@ function apiExcluirParadaPainel(payload) {
   if (String(existente.tipo || '').trim().toUpperCase() !== TIPO_EVENTO.parada) {
     throw new Error('So e possivel excluir paradas lancadas pelo painel.');
   }
-  if (!existente.fim) {
+  if (!Util.fimDeEvento(existente.fim)) {
     throw new Error('Nao e possivel excluir uma parada em andamento.');
   }
   Repo.excluirLinha(ABAS.eventos, existente._linha);
@@ -5089,7 +5144,7 @@ function apiEditarParadaPainel(payload) {
   if (String(existente.tipo || '').trim().toUpperCase() !== TIPO_EVENTO.parada) {
     throw new Error('So e possivel editar paradas lancadas pelo painel.');
   }
-  if (!existente.fim) {
+  if (!Util.fimDeEvento(existente.fim)) {
     throw new Error('Nao e possivel editar uma parada em andamento.');
   }
 
@@ -5384,7 +5439,7 @@ function indiceEventosChao_(agora, inicioDia) {
       ultimoInicio: null,
       hoje: [],
     });
-    if (!e.fim && (!b.aberto || e.inicio > b.aberto.inicio)) b.aberto = e;
+    if (!Util.fimDeEvento(e.fim) && (!b.aberto || e.inicio > b.aberto.inicio)) b.aberto = e;
     if (e.itemCodigo && (!b.ultimoInicio || e.inicio > b.ultimoInicio)) {
       b.ultimoInicio = e.inicio;
       b.ultimoCodigo = e.itemCodigo;
@@ -5455,7 +5510,7 @@ function eventoAberto_(maquinaId) {
   let escolhido = null;
   for (let i = 0; i < linhas.length; i++) {
     if (String(linhas[i].maquina_id).trim() !== maquinaId) continue;
-    if (linhas[i].fim) continue;
+    if (Util.fimDeEvento(linhas[i].fim)) continue;
     const ini = Util.paraData(linhas[i].inicio);
     if (!ini) continue;
     if (!escolhido || ini > escolhido.inicio) {
@@ -5482,7 +5537,7 @@ function encerrarAberto_(maquinaId, quando, excetoId) {
   let fechado = null;
   linhas.forEach(function (e) {
     if (String(e.maquina_id).trim() !== maquinaId) return;
-    if (e.fim) return;
+    if (Util.fimDeEvento(e.fim)) return;
     if (excetoId && String(e.id).trim() === excetoId) return;
     Repo.atualizarRegistro(ABAS.eventos, e._linha, { fim: quando });
     fechado = e;
