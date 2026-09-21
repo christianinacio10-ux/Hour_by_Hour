@@ -21,7 +21,7 @@ const PACOTE_HTML = {
 
 const APP = {
   nome: 'Controle Hora por Hora',
-  versao: '0.8.35',
+  versao: '0.8.36',
 };
 
 /** Marca a arvore do CSV na planilha; se mudar o catalogo, suba este id. */
@@ -5796,12 +5796,16 @@ function construirGerencial(opcoes) {
   const indiceAd = indiceCalendarioAdOpcional_();
 
   ctx.maquinas.forEach(function (maquina) {
-    let ultimoItem = null;
+    const horasMaq = [];
     buckets.forEach(function (b) {
       const h = resolverHora_(ctx, maquina, b);
       if (h.futuro) return;
       if (!h.minutos.programados && !(h.quantidade > 0)) return;
-
+      horasMaq.push(h);
+    });
+    const horasConta = horasParaUptimePeriodo_(horasMaq);
+    let ultimoItem = null;
+    horasConta.forEach(function (h) {
       const turno = turnoVigente_(ctx, Util.paraData(h.inicio));
       const turnoId = turno ? turno.id : '';
       const turnoNome = turno ? turno.nome : '';
