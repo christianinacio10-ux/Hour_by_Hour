@@ -21,7 +21,7 @@ const PACOTE_HTML = {
 
 const APP = {
   nome: 'Controle Hora por Hora',
-  versao: '0.8.34',
+  versao: '0.8.35',
 };
 
 /** Marca a arvore do CSV na planilha; se mudar o catalogo, suba este id. */
@@ -2101,7 +2101,7 @@ function montarMaquina_(ctx, maquina, horas) {
     status = STATUS.produzindo;
   }
 
-  const totais = totalizar_(encerradas, maquina.uptimeMetaPct);
+  const totais = totalizar_(horasParaUptimePeriodo_(encerradas), maquina.uptimeMetaPct);
 
   return {
     id: maquina.id,
@@ -2162,6 +2162,23 @@ function descreverItem_(ctx, codigo) {
     codigo: codigo,
     descricao: item ? item.descricao : codigo,
   };
+}
+
+/**
+ * No recorte de varios dias, dia sem peca (fds parado, planta fechada)
+ * nao entra no uptime. Um dia sozinho (hoje/ontem) continua inteiro,
+ * mesmo ainda sem producao.
+ */
+function horasParaUptimePeriodo_(horas) {
+  const lista = horas || [];
+  const qtdPorDia = {};
+  lista.forEach(function (h) {
+    qtdPorDia[h.dia] = (qtdPorDia[h.dia] || 0) + (h.quantidade || 0);
+  });
+  if (Object.keys(qtdPorDia).length <= 1) return lista;
+  return lista.filter(function (h) {
+    return (qtdPorDia[h.dia] || 0) > 0;
+  });
 }
 
 function totalizar_(horas, uptimeMetaPct) {
