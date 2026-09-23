@@ -21,7 +21,7 @@ const PACOTE_HTML = {
 
 const APP = {
   nome: 'Controle Hora por Hora',
-  versao: '0.8.36',
+  versao: '0.8.37',
 };
 
 /** Marca a arvore do CSV na planilha; se mudar o catalogo, suba este id. */
@@ -137,6 +137,7 @@ const CONFIG_PADRAO = [
   ['plano_modo_congelamento', 'SEMANA', 'SEMANA congela a semana inteira; DIA congela cada dia'],
   ['plano_slots_min', '2', 'Quantos itens por maquina/dia o plano mostra por padrao'],
   ['plano_pin_reabrir', '8532', 'PIN exigido para reabrir um plano congelado e para acessar Cadastros'],
+  ['tecnologia_prefixos', 'DDA=DCA;YMJ=Converting', 'Prefixo do codigo da maquina = tecnologia (ex.: DDA=DCA;YMJ=Converting). Maquinas novas do CSV herdam pelo prefixo; o cadastro pode acrescentar outros.'],
 ];
 
 /**
@@ -1095,6 +1096,7 @@ function instalarSistema() {
 
   formatarAbas_();
   semearCadastros_();
+  try { sincronizarMaquinasDoCsv_(null, { completo: true }); } catch (e) {}
   try { garantirTecnologiaMaquinas_(); } catch (e) {}
   try { garantirCalendarioAd_(); } catch (e) {}
   try { garantirEpoxyChips_(); } catch (e) {}
@@ -1298,9 +1300,11 @@ function ingerirTodasAsFontes(opcoes) {
     }
   });
 
-  if (total > 0) CachePainel.invalidar();
+  let criadas = [];
+  try { criadas = sincronizarMaquinasDoCsv_() || []; } catch (e) {}
+  if (total > 0 || criadas.length) CachePainel.invalidar();
   const resumo = resultados.join(' | ');
-  if (total > 0 || !opcoes.incremental) {
+  if (total > 0 || !opcoes.incremental || criadas.length) {
     Repo.registrarLog('ingestao', 'OK', resumo);
     console.log(resumo);
   }
@@ -1388,7 +1392,13 @@ function ingerirTabela_(fonte, tabela, opcoes) {
   const codigosDesconhecidos = {};
 
   const conhecidos = {};
-  Cadastros.maquinas(fonte.plantaId).forEach(function (m) { conhecidos[m.codigoFonte] = true; });
+  Repo.ler(ABAS.maquinas).forEach(function (m) {
+    if (fonte.plantaId && String(m.planta_id || '').trim() !== fonte.plantaId) return;
+    const id = String(m.id || '').trim();
+    const fonteCodigo = String(m.codigo_fonte || m.id || '').trim();
+    if (id) conhecidos[id] = true;
+    if (fonteCodigo) conhecidos[fonteCodigo] = true;
+  });
 
   const primeira = incremental && tabela.length > 500 ? tabela.length - 500 : 1;
 
@@ -1423,13 +1433,146 @@ function ingerirTabela_(fonte, tabela, opcoes) {
 
   const desconhecidos = Object.keys(codigosDesconhecidos);
   if (desconhecidos.length) {
-    Repo.registrarLog(
-      'ingestao', 'AVISO',
-      'Maquinas presentes no arquivo e ausentes do cadastro: ' + desconhecidos.join(', ')
-    );
+    const criadas = garantirMaquinasDosCodigos_(desconhecidos, fonte.plantaId);
+    criadas.forEach(function (c) { conhecidos[c] = true; });
+    const faltando = desconhecidos.filter(function (c) { return !conhecidos[c]; });
+    if (criadas.length) {
+      Repo.registrarLog(
+        'ingestao', 'OK',
+        'Maquinas novas cadastradas a partir do arquivo: ' + criadas.join(', ')
+      );
+    }
+    if (faltando.length) {
+      Repo.registrarLog(
+        'ingestao', 'AVISO',
+        'Maquinas presentes no arquivo e ausentes do cadastro: ' + faltando.join(', ')
+      );
+    }
   }
 
   return novas.length;
+}
+
+function nomeMaquinaDoCodigo_(codigo) {
+  return String(codigo || '').trim().replace(/([A-Za-z]+)(\d+)$/, '$1 $2');
+}
+
+function herancaCadastroMaquina_(codigo, plantaId, existentes) {
+  const pref = prefixoCodigoMaquina_(codigo);
+  let mesma = null;
+  let mesmaPlanta = null;
+  (existentes || []).forEach(function (m) {
+    if (plantaId && String(m.planta_id || '').trim() !== plantaId) return;
+    if (!mesmaPlanta) mesmaPlanta = m;
+    if (pref && prefixoCodigoMaquina_(m.id || m.codigo_fonte) === pref && !mesma) {
+      mesma = m;
+    }
+  });
+  const base = mesma || {};
+  const planta = mesmaPlanta || {};
+  return {
+    setor: String(base.setor || ''),
+    unidade: String(base.unidade || planta.unidade || 'pecas'),
+    uptime: Util.paraNumero(base.uptime_meta_pct) || Util.paraNumero(planta.uptime_meta_pct) || 85,
+  };
+}
+
+function garantirMaquinasDosCodigos_(codigos, plantaId) {
+  const lista = [];
+  const vistos = {};
+  (codigos || []).forEach(function (c) {
+    const codigo = String(c || '').trim();
+    if (!codigo || vistos[codigo]) return;
+    vistos[codigo] = true;
+    lista.push(codigo);
+  });
+  if (!lista.length) return [];
+
+  try { garantirPrefixosTecnologia_(); } catch (e) {}
+  try { garantirTecnologiaMaquinas_(); } catch (e) {}
+
+  const existentes = Repo.ler(ABAS.maquinas);
+  const conhecidos = {};
+  let maxOrdem = 0;
+  existentes.forEach(function (m) {
+    const id = String(m.id || '').trim();
+    const fonte = String(m.codigo_fonte || m.id || '').trim();
+    if (id) conhecidos[id] = true;
+    if (fonte) conhecidos[fonte] = true;
+    const ordem = Util.paraNumero(m.ordem) || 0;
+    if (ordem > maxOrdem) maxOrdem = ordem;
+  });
+
+  const planta = String(plantaId || '').trim() ||
+    (Cadastros.plantas()[0] && Cadastros.plantas()[0].id) || 'P1';
+
+  const novos = [];
+  const criadas = [];
+  lista.forEach(function (codigo) {
+    if (conhecidos[codigo]) return;
+    maxOrdem += 1;
+    const heranca = herancaCadastroMaquina_(codigo, planta, existentes);
+    novos.push({
+      id: codigo,
+      planta_id: planta,
+      codigo_fonte: codigo,
+      nome: nomeMaquinaDoCodigo_(codigo),
+      setor: heranca.setor,
+      unidade: heranca.unidade,
+      velocidade_referencia: '',
+      ordem: maxOrdem,
+      ativo: 'SIM',
+      uptime_meta_pct: heranca.uptime,
+      tecnologia: tecnologiaPadraoMaquina_(codigo),
+    });
+    conhecidos[codigo] = true;
+    criadas.push(codigo);
+  });
+
+  if (!novos.length) return [];
+  Repo.acrescentar(ABAS.maquinas, novos);
+  CachePainel.invalidar();
+  Repo.registrarLog('cadastro', 'OK', 'Maquinas novas a partir do CSV: ' + criadas.join(', '));
+  return criadas;
+}
+
+function garantirMaquinasDosBrutos_(plantaId, opcoes) {
+  opcoes = opcoes || {};
+  const fontes = {};
+  Cadastros.fontes().forEach(function (f) {
+    fontes[f.id] = f.plantaId;
+  });
+  const plantas = Cadastros.plantas();
+  const fallback = String(plantaId || '').trim() ||
+    (plantas[0] && plantas[0].id) || 'P1';
+
+  const linhas = opcoes.completo
+    ? Repo.ler(ABAS.brutos)
+    : Repo.lerRecentes(ABAS.brutos, 2000);
+  const porPlanta = {};
+  linhas.forEach(function (b) {
+    const codigo = String(b.maquina_codigo || '').trim();
+    if (!codigo) return;
+    const planta = fontes[String(b.fonte_id || '').trim()] || fallback;
+    if (plantaId && planta !== plantaId) return;
+    (porPlanta[planta] = porPlanta[planta] || {})[codigo] = true;
+  });
+
+  let criadas = [];
+  Object.keys(porPlanta).forEach(function (planta) {
+    criadas = criadas.concat(
+      garantirMaquinasDosCodigos_(Object.keys(porPlanta[planta]), planta)
+    );
+  });
+  return criadas;
+}
+
+function sincronizarMaquinasDoCsv_(plantaId, opcoes) {
+  try { garantirPrefixosTecnologia_(); } catch (e) {}
+  let criadas = [];
+  try { criadas = garantirMaquinasDosBrutos_(plantaId, opcoes) || []; } catch (e) {}
+  try { garantirTecnologiaMaquinas_(); } catch (e) {}
+  return criadas;
 }
 
 function baixarConteudo_(fonte) {
@@ -2399,6 +2542,9 @@ function apiContexto(idioma) {
   try { garantirEpoxyChips_(); } catch (e) {
     Repo.registrarLog('epoxy', 'ERRO', 'Aba chips: ' + (e && e.message ? e.message : e));
   }
+  try { sincronizarMaquinasDoCsv_(); } catch (e) {
+    Repo.registrarLog('cadastro', 'ERRO', 'Maquinas do CSV: ' + (e && e.message ? e.message : e));
+  }
   const config = Cadastros.config();
   const escolhido = I18n.normalizar(idioma || config.texto('idioma_padrao', 'pt-BR'));
 
@@ -2432,7 +2578,10 @@ function apiPainel(opcoes) {
     });
   }
 
-  if (!opcoes.ignorarCache && novas === 0) {
+  let criadas = [];
+  try { criadas = sincronizarMaquinasDoCsv_(opcoes.plantaId) || []; } catch (e) {}
+
+  if (!opcoes.ignorarCache && novas === 0 && !criadas.length) {
     const guardado = CachePainel.obter(chave);
     if (guardado) {
       guardado.doCache = true;
@@ -2789,7 +2938,7 @@ const I18n = {
       oeeSku: 'No. of SKU',
       oeeTrials: 'Trials/Maintenance/Training/5S',
       tecnologia: 'Tecnologia',
-      tecnologiaDica: 'Agrupa maquinas no relatorio OEE/UEE (ex.: DDA1, DDA2 e DDA3 = DCA).',
+      tecnologiaDica: 'Agrupa maquinas no relatorio OEE/UEE. Maquinas novas do CSV entram sozinhas; o prefixo define a tecnologia (DDA=DCA, YMJ=Converting). Ao gravar aqui, o prefixo fica salvo para as proximas.',
       motivoParada: 'Motivo',
       paradaPlanejadaMin: 'Parada planejada (min)',
       abaixoDe: 'Abaixo de {n}%',
@@ -3208,7 +3357,7 @@ const I18n = {
       oeeSku: 'No. of SKU',
       oeeTrials: 'Trials/Maintenance/Training/5S',
       tecnologia: 'Technology',
-      tecnologiaDica: 'Groups machines in the OEE/UEE report (e.g. DDA1, DDA2 and DDA3 = DCA).',
+      tecnologiaDica: 'Groups machines in the OEE/UEE report. New CSV machines appear automatically; the code prefix sets the technology (DDA=DCA, YMJ=Converting). Saving here remembers the prefix for the next ones.',
       motivoParada: 'Reason',
       paradaPlanejadaMin: 'Planned downtime (min)',
       abaixoDe: 'Below {n}%',
@@ -3627,7 +3776,7 @@ const I18n = {
       oeeSku: 'No. of SKU',
       oeeTrials: 'Trials/Maintenance/Training/5S',
       tecnologia: 'Tecnologia',
-      tecnologiaDica: 'Agrupa maquinas en el informe OEE/UEE (ej.: DDA1, DDA2 y DDA3 = DCA).',
+      tecnologiaDica: 'Agrupa maquinas en el informe OEE/UEE. Maquinas nuevas del CSV entran solas; el prefijo define la tecnologia (DDA=DCA, YMJ=Converting). Al grabar aqui, el prefijo queda para las proximas.',
       motivoParada: 'Motivo',
       paradaPlanejadaMin: 'Parada planificada (min)',
       abaixoDe: 'Por debajo de {n}%',
@@ -3793,6 +3942,7 @@ const I18n = {
 function apiCadastros(opcoes) {
   opcoes = opcoes || {};
   Repo.limparMemoria();
+  try { sincronizarMaquinasDoCsv_(opcoes.plantaId, { completo: true }); } catch (e) {}
   try { garantirTecnologiaMaquinas_(); } catch (e) {}
   try { garantirCalendarioAd_(); } catch (e) {}
   return montarPacoteCadastros_(opcoes.plantaId);
@@ -3816,6 +3966,7 @@ function apiSalvarTecnologiaMaquina(payload) {
   });
   if (!linhas.length) throw new Error('Maquina nao cadastrada.');
   Repo.atualizarCelulas(ABAS.maquinas, linhas[0]._linha, { tecnologia: tecnologia });
+  try { aprenderPrefixoTecnologia_(maquinaId, tecnologia); } catch (e) {}
   CachePainel.invalidar();
   Repo.limparMemoria();
   Repo.registrarLog('cadastro', 'OK', 'tecnologia ' + maquinaId + ' = ' + (tecnologia || '(vazia)'));
@@ -5026,6 +5177,7 @@ function parsearCsvMotivos(texto) {
 function apiChaoDeFabrica(opcoes) {
   opcoes = opcoes || {};
   Repo.limparMemoria();
+  try { sincronizarMaquinasDoCsv_(opcoes.plantaId); } catch (e) {}
   return montarPacoteChao_(opcoes);
 }
 
@@ -5764,7 +5916,10 @@ function apiGerencial(opcoes) {
     ingerirSeguro_({ incremental: true, forcar: !!opcoes.ignorarCache });
   }
 
-  if (!opcoes.ignorarCache) {
+  let criadas = [];
+  try { criadas = sincronizarMaquinasDoCsv_(opcoes.plantaId) || []; } catch (e) {}
+
+  if (!opcoes.ignorarCache && !criadas.length) {
     const guardado = CachePainel.obter(chave);
     if (guardado) {
       guardado.doCache = true;
@@ -6701,6 +6856,7 @@ function apiPlano(opcoes) {
   garantirAbaPlano_();
   garantirConfigPlano_();
   Repo.limparMemoria();
+  try { sincronizarMaquinasDoCsv_(opcoes.plantaId); } catch (e) {}
   return montarPacotePlano_(opcoes);
 }
 
@@ -7628,6 +7784,7 @@ function uptimePctPlano_(valor) {
 function apiOee(opcoes) {
   opcoes = opcoes || {};
   Repo.limparMemoria();
+  try { sincronizarMaquinasDoCsv_(opcoes.plantaId); } catch (e) {}
   return construirOee_(opcoes);
 }
 
@@ -7789,8 +7946,113 @@ function resolverJanelaOee_(opcoes, agora) {
   return resolverJanelaOee_({ mes: mesPadraoRelatorio_(hoje) }, agora);
 }
 
+function prefixoCodigoMaquina_(codigo) {
+  const m = String(codigo || '').trim().match(/^([A-Za-z]+)/);
+  return m ? m[1].toUpperCase() : '';
+}
+
+function parsearPrefixosTecnologia_(texto) {
+  const mapa = {};
+  String(texto || '').split(/[;\n,]+/).forEach(function (par) {
+    const parte = String(par || '').trim();
+    if (!parte) return;
+    const m = parte.match(/^([A-Za-z0-9_-]+)\s*[=:]\s*(.+)$/);
+    if (!m) return;
+    const pref = prefixoCodigoMaquina_(m[1]) || String(m[1]).trim().toUpperCase();
+    const tec = String(m[2] || '').trim();
+    if (pref && tec) mapa[pref] = tec;
+  });
+  return mapa;
+}
+
+function serializarPrefixosTecnologia_(mapa) {
+  return Object.keys(mapa || {}).sort().map(function (k) {
+    return k + '=' + mapa[k];
+  }).join(';');
+}
+
+function itemConfigPadrao_(chave) {
+  for (let i = 0; i < CONFIG_PADRAO.length; i++) {
+    if (CONFIG_PADRAO[i][0] === chave) return CONFIG_PADRAO[i];
+  }
+  return null;
+}
+
+function padraoTecnologiaPrefixos_() {
+  const item = itemConfigPadrao_('tecnologia_prefixos');
+  return item ? item[1] : '';
+}
+
+function descricaoTecnologiaPrefixos_() {
+  const item = itemConfigPadrao_('tecnologia_prefixos');
+  return item ? item[2] : 'Prefixo do codigo da maquina = tecnologia';
+}
+
+function textoPrefixosTecnologia_() {
+  const padrao = padraoTecnologiaPrefixos_();
+  try {
+    return Cadastros.config().texto('tecnologia_prefixos', padrao);
+  } catch (e) {
+    return padrao;
+  }
+}
+
+function mapaPrefixosTecnologia_() {
+  const mapa = parsearPrefixosTecnologia_(textoPrefixosTecnologia_());
+  try {
+    Repo.ler(ABAS.maquinas).forEach(function (m) {
+      const tec = String(m.tecnologia || '').trim();
+      const pref = prefixoCodigoMaquina_(m.id || m.codigo_fonte);
+      if (tec && pref && !mapa[pref]) mapa[pref] = tec;
+    });
+  } catch (e) {}
+  return mapa;
+}
+
 function tecnologiaPadraoMaquina_(id) {
-  return /^DDA/i.test(String(id || '')) ? 'DCA' : '';
+  const pref = prefixoCodigoMaquina_(id);
+  if (!pref) return '';
+  const mapa = mapaPrefixosTecnologia_();
+  if (mapa[pref]) return mapa[pref];
+  return pref === 'DDA' ? 'DCA' : '';
+}
+
+function garantirPrefixosTecnologia_() {
+  const chave = 'tecnologia_prefixos';
+  const atuais = {};
+  Repo.ler(ABAS.config).forEach(function (l) {
+    atuais[String(l.chave).trim()] = l;
+  });
+  if (atuais[chave]) return;
+  Repo.acrescentar(ABAS.config, [{
+    chave: chave,
+    valor: padraoTecnologiaPrefixos_(),
+    descricao: descricaoTecnologiaPrefixos_(),
+  }]);
+}
+
+function aprenderPrefixoTecnologia_(codigo, tecnologia) {
+  const pref = prefixoCodigoMaquina_(codigo);
+  const tec = String(tecnologia || '').trim();
+  if (!pref || !tec) return;
+  garantirPrefixosTecnologia_();
+  const atuais = Repo.ler(ABAS.config);
+  let linha = null;
+  for (let i = 0; i < atuais.length; i++) {
+    if (String(atuais[i].chave).trim() === 'tecnologia_prefixos') {
+      linha = atuais[i];
+      break;
+    }
+  }
+  const mapa = parsearPrefixosTecnologia_(linha ? linha.valor : padraoTecnologiaPrefixos_());
+  if (mapa[pref]) return;
+  mapa[pref] = tec;
+  const valor = serializarPrefixosTecnologia_(mapa);
+  if (linha) {
+    Repo.atualizarCelulas(ABAS.config, linha._linha, { valor: valor });
+    return;
+  }
+  gravarConfig_('tecnologia_prefixos', valor, descricaoTecnologiaPrefixos_());
 }
 
 function tecnologiaDaMaquina_(maquina) {
@@ -8044,6 +8306,7 @@ function metricasSemanaOee_(args) {
 function apiRelatorioParadas(opcoes) {
   opcoes = opcoes || {};
   Repo.limparMemoria();
+  try { sincronizarMaquinasDoCsv_(opcoes.plantaId); } catch (e) {}
   return construirRelatorioParadas_(opcoes);
 }
 
