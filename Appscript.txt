@@ -21,7 +21,7 @@ const PACOTE_HTML = {
 
 const APP = {
   nome: 'Controle Hora por Hora',
-  versao: '0.8.38',
+  versao: '0.8.39',
 };
 
 /** Marca a arvore do CSV na planilha; se mudar o catalogo, suba este id. */
@@ -2921,7 +2921,7 @@ const I18n = {
       relAno: 'Ano',
       relQtyParadas: 'Paradas',
       oeeSub: 'Horas 24x7, plano congelado e ociosidade por tecnologia',
-      oeeDica: 'Horas planejadas sao as horas disponiveis do plano congelado. Setup e break sao linhas a parte. Semanas seguem o calendario Avery.',
+      oeeDica: 'Horas planejadas sao as horas de turno do plano congelado, incluindo setup. Se o dia estava livre para rodar, entra inteiro. Semanas seguem o calendario Avery.',
       oeeSemGrupos: 'Nenhuma maquina com tecnologia cadastrada. Informe a tecnologia em Cadastros > Maquinas.',
       oeeSemTecnologia: '{n} maquina(s) sem tecnologia. Cadastre em Cadastros > Maquinas.',
       oeeMaquinasGrupo: 'Maquinas',
@@ -3341,7 +3341,7 @@ const I18n = {
       relAno: 'Year',
       relQtyParadas: 'Stops',
       oeeSub: '24x7 hours, frozen plan and idle time by technology',
-      oeeDica: 'Planned hours are the available hours from the frozen plan. Setup and break are separate rows. Weeks follow the Avery calendar.',
+      oeeDica: 'Planned hours are the frozen-plan shift hours, including setup. If the day was free to run, the whole day counts. Weeks follow the Avery calendar.',
       oeeSemGrupos: 'No machine has a technology assigned. Set it in Master data > Machines.',
       oeeSemTecnologia: '{n} machine(s) without technology. Set it in Master data > Machines.',
       oeeMaquinasGrupo: 'Machines',
@@ -3761,7 +3761,7 @@ const I18n = {
       relAno: 'Ano',
       relQtyParadas: 'Paradas',
       oeeSub: 'Horas 24x7, plan congelado y ociosidad por tecnologia',
-      oeeDica: 'Las horas planificadas son las horas disponibles del plan congelado. Setup y break van aparte. Las semanas siguen el calendario Avery.',
+      oeeDica: 'Las horas planificadas son las horas de turno del plan congelado, incluyendo setup. Si el dia estaba libre para correr, entra entero. Las semanas siguen el calendario Avery.',
       oeeSemGrupos: 'Ninguna maquina tiene tecnologia. Informela en Cadastros > Maquinas.',
       oeeSemTecnologia: '{n} maquina(s) sin tecnologia. Cadastrela en Cadastros > Maquinas.',
       oeeMaquinasGrupo: 'Maquinas',
@@ -7806,8 +7806,8 @@ function uptimePctPlano_(valor) {
  *
  * O calendario deste relatorio e 24x7. Nao usa minutos programados do
  * painel hora a hora: cada semana tem sempre 7 dias disponiveis.
- * Horas planejadas = horas disponiveis do plano congelado.
- * Setup sai do campo de setups do mesmo plano.
+ * Horas planejadas = horas de turno do plano congelado, sem tirar o setup.
+ * Setup continua linha a parte. Dia nao congelado nao entra.
  */
 
 function apiOee(opcoes) {
@@ -8237,16 +8237,14 @@ function horasPlanejadasDiaOee_(linhas, maquina, cfg, cal, turnos, weekday) {
     return { horas: 0, setup: 0, skus: [] };
   }
   const bruta = celulaDeLinhas_(linhas, cfg, weekday, turnos);
-  const horasCalendario = horasDispOverridePlano_(cal, bruta.turnos, cfg);
-  const horasSetup = (bruta.setups || 0) * (cfg.horasSetup || 0);
-  const horasDisp = Math.max(0, horasCalendario - horasSetup);
+  const horasCalendario = Math.max(0, horasDispOverridePlano_(cal, bruta.turnos, cfg));
   const skus = [];
   linhas.forEach(function (l) {
     const codigo = String(l.item_codigo || '').trim();
     if (codigo) skus.push(codigo);
   });
   return {
-    horas: horasDisp,
+    horas: horasCalendario,
     setup: bruta.setups || 0,
     skus: skus,
   };
@@ -8301,7 +8299,7 @@ function metricasSemanaOee_(args) {
   });
 
   const brk = args.breakHoras || 0;
-  const noOrders = horasDisp - horasFeriado - horasPlan - horasSetup - brk;
+  const noOrders = horasDisp - horasFeriado - horasPlan - brk;
   const nonOp = horasFeriado + noOrders;
 
   function r(n) { return Math.round(n * 100) / 100; }
