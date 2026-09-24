@@ -8346,16 +8346,14 @@ function horasPlanejadasDiaOee_(linhas, maquina, cfg, cal, turnos, weekday) {
     return { horas: 0, setup: 0, skus: [] };
   }
   const bruta = celulaDeLinhas_(linhas, cfg, weekday, turnos);
-  const horasCalendario = horasDispOverridePlano_(cal, bruta.turnos, cfg);
-  const horasSetup = (bruta.setups || 0) * (cfg.horasSetup || 0);
-  const horasDisp = Math.max(0, horasCalendario - horasSetup);
+  const horasCalendario = Math.max(0, horasDispOverridePlano_(cal, bruta.turnos, cfg));
   const skus = [];
   linhas.forEach(function (l) {
     const codigo = String(l.item_codigo || '').trim();
     if (codigo) skus.push(codigo);
   });
   return {
-    horas: horasDisp,
+    horas: horasCalendario,
     setup: bruta.setups || 0,
     skus: skus,
   };
@@ -8424,7 +8422,7 @@ function metricasSemanaOee_(args) {
   });
 
   const brk = args.breakHoras || 0;
-  const noOrders = horasDisp - horasFeriado - horasPlan - horasSetup - brk;
+  const noOrders = horasDisp - horasFeriado - horasPlan - brk;
   const nonOp = horasFeriado + noOrders;
 
   function r(n) { return Math.round(n * 100) / 100; }
