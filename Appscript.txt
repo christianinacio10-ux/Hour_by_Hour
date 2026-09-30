@@ -68,7 +68,8 @@ const ESQUEMA = {
     'tipo', 'hora_inicio', 'hora_fim', 'descricao',
   ],
   // tipo1/tipo2 ficam no banco para filtros futuros; a justificativa usa a arvore cat1 > cat2 > descricao.
-  [ABAS.motivos]: ['id', 'descricao', 'categoria', 'planejada', 'ativo', 'categoria2', 'tipo1', 'tipo2'],
+  // tecnologias no fim: vazio = todas as maquinas. Varios tipos separados por ponto e virgula.
+  [ABAS.motivos]: ['id', 'descricao', 'categoria', 'planejada', 'ativo', 'categoria2', 'tipo1', 'tipo2', 'tecnologias'],
   [ABAS.brutos]: ['data_hora', 'maquina_codigo', 'quantidade', 'fonte_id', 'ingerido_em'],
   [ABAS.eventos]: [
     'id', 'maquina_id', 'tipo', 'item_codigo', 'ordem_producao',
@@ -177,100 +178,100 @@ const SEMENTES = {
     ['T2', 'P1', 'Turno 2', '1,2,3,4,5,6', '14:20', '22:20', 'SIM'],
   ],
   motivos: [
-    ["P001", "Retirar rolo acabado", "Ajuste produção", "SIM", "SIM", "Abastecimento/Retirada", "Planned Downtime", "Change Raw Material"],
-    ["P002", "Troca de antena", "Ajuste produção", "SIM", "SIM", "Abastecimento/Retirada", "Planned Downtime", "Change Raw Material"],
-    ["P003", "Troca de Interleaf", "Ajuste produção", "SIM", "SIM", "Abastecimento/Retirada", "Planned Downtime", "Change Raw Material"],
-    ["P004", "Troca de chip", "Ajuste produção", "SIM", "SIM", "Abastecimento/Retirada", "Planned Downtime", "Change Raw Material"],
-    ["P005", "Troca de epóxi", "Ajuste produção", "SIM", "SIM", "Abastecimento/Retirada", "Planned Downtime", "Change Raw Material"],
-    ["P006", "Não faz Pick up chip", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P007", "Chip Quebrado", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P008", "Chip Deslocado", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P009", "Dispençamento 2 chips na mesma antena", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P010", "Wafer riscado", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P011", "Chip Rotacionado", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P012", "Error Die Ejector XY-Movement range", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P013", "Erro Pick up (Pick chip diferente do mapa)", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P014", "Falha reconhecimento Die de Referencia ( Wafer sujo epoxi)", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P015", "Ajuste cap Retract/ Cap Gap/Needle offset", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P016", "X> axis target position out of maximum limit", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P017", "Error calculating next die position", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P018", "Check for Shift Register mismatch", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P019", "DieHDL Indexer", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P020", "Post Place", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P021", "Erro operacional", "Ajuste produção", "NAO", "SIM", "Erro operacional", "Unplanned Downtime", "Unplanned Downtime"],
-    ["P022", "Gota Epoxi irregular ( Ovalizada, splash)", "Ajuste produção", "NAO", "SIM", "Epoxi", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P023", "Falta de gota de epoxi", "Ajuste produção", "NAO", "SIM", "Epoxi", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P024", "Tamanho da gota de epoxi", "Ajuste produção", "NAO", "SIM", "Epoxi", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P025", "Gota de Epoxi fora do centro da antena", "Ajuste produção", "NAO", "SIM", "Epoxi", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P026", "Error in Epoxi DOT placement calculation", "Ajuste produção", "NAO", "SIM", "Epoxi", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P027", "X> axis target position out of maximum limit", "Ajuste produção", "NAO", "SIM", "Epoxi", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P028", "Prebonder/Tape transport (Limpeza Sensores Buffer Pre Bonder)", "Ajuste produção", "NAO", "SIM", "Buffer", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P029", "Falta de vácuo", "Ajuste produção", "NAO", "SIM", "Buffer", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P030", "Tape Inspection", "Ajuste produção", "NAO", "SIM", "Final Bonder", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P031", "Ajuste Cover tape (Centralização e tensionamento)", "Ajuste produção", "NAO", "SIM", "Final Bonder", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P032", "Limpeza Thermodes", "Ajuste produção", "SIM", "SIM", "Final Bonder", "Planned Downtime", "Process requirements"],
-    ["P033", "Deslocamento da Antena (ajuste das Jigs)", "Ajuste produção", "NAO", "SIM", "Final Bonder", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P034", "Thermodes temperature not in range", "Ajuste produção", "NAO", "SIM", "Final Bonder", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P035", "Troca Cover tape", "Ajuste produção", "SIM", "SIM", "Final Bonder", "Planned Downtime", "Process requirements"],
-    ["P036", "Falha shaft (Shaft não infla etc)", "Ajuste produção", "NAO", "SIM", "Input Spooler", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P037", "Antenna enrolada no shaft motor", "Ajuste produção", "NAO", "SIM", "Input Spooler", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P038", "Antena danificada nos clamp's entrada do prebonder", "Ajuste produção", "NAO", "SIM", "Input Spooler", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P039", "Desalinhamento Antena", "Ajuste produção", "NAO", "SIM", "Input Spooler", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P040", "Limpeza do cartucho", "Ajuste produção", "SIM", "SIM", "Redbird", "Planned Downtime", "Process requirements"],
-    ["P041", "Troca do cartucho", "Ajuste produção", "SIM", "SIM", "Redbird", "Planned Downtime", "Process requirements"],
-    ["P042", "Error Die Ejector XY-Movement range", "Manutenção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P043", "Ajuste desalinhamento/ Telescopamento (rolo)", "Ajuste produção", "NAO", "SIM", "Output spooler", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P044", "Atualização Software", "Engenharia", "SIM", "SIM", "Atualização", "Planned Downtime", "Process requirements"],
-    ["P045", "Teach's", "Engenharia", "SIM", "SIM", "Atualização", "Planned Downtime", "Process requirements"],
-    ["P046", "Puncher Deslocado", "Engenharia", "SIM", "SIM", "Redbird", "Planned Downtime", "Process requirements"],
-    ["P047", "Ajuste Receita", "Engenharia", "SIM", "SIM", "Redbird", "Planned Downtime", "Process requirements"],
-    ["P048", "Marca Negra deslocada", "Engenharia", "SIM", "SIM", "Redbird", "Planned Downtime", "Process requirements"],
-    ["P049", "Falta de ferramental", "Engenharia", "NAO", "SIM", "Toolings", "Unplanned Downtime", "Tooling Shortage"],
-    ["P050", "Falta Energia.", "Falta de energia", "NAO", "SIM", "Falta Energia", "Unplanned Downtime", "Power Outages"],
-    ["P051", "Falta Antena área produtiva", "Logística", "NAO", "SIM", "Logística", "Unplanned Downtime", "Material Shortage"],
-    ["P052", "Falta Chip área produtiva", "Logística", "NAO", "SIM", "Logística", "Unplanned Downtime", "Material Shortage"],
-    ["P053", "Falta Interleaf área produtiva", "Logística", "NAO", "SIM", "Logística", "Unplanned Downtime", "Material Shortage"],
-    ["P054", "Falta Epoxi área produtiva", "Logística", "NAO", "SIM", "Logística", "Unplanned Downtime", "Material Shortage"],
-    ["P055", "Ajuste de Pino Guia", "Manutenção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P056", "Ajuste de cameras", "Manutenção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P057", "Quebra da agulha", "Manutenção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P058", "Communication interface doesn\u2019t response in given time", "Manutenção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P059", "CDDA Die Ejector  EjectDie move axis failed, timeout during processing of a command", "Manutenção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P060", "Pre Epóxy (Inspeção de teach)", "Manutençao", "NAO", "SIM", "Pre Bonder", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P061", "Pre Place (Inspeção de teach)", "Manutençao", "NAO", "SIM", "Pre Bonder", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P062", "Buffer Mismatch (Ajuste da largura buffers)", "Manutenção", "NAO", "SIM", "Buffer", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P063", "Perda de Comunicação Cameras", "Manutenção", "NAO", "SIM", "Epoxi", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P064", "Limpeza Sistema Vermes", "Manutenção", "SIM", "SIM", "Epoxi", "Planned Downtime", "Process requirements"],
-    ["P065", "Communication interface doesn\u2019t response in given time", "Manutenção", "NAO", "SIM", "Epoxi", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P066", "Calibração/Ajuste", "Manutenção", "NAO", "SIM", "Epoxi", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P067", "Sensor Porta desalinhado", "Manutenção", "NAO", "SIM", "Portas", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P068", "Error Global Media (AirDI)", "Manutenção", "NAO", "SIM", "Air", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P069", "Ajuste thermos (Problema com temperatura)", "Manutenção", "NAO", "SIM", "Final bonder", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P070", "Desalinhamento FB", "Manutenção", "NAO", "SIM", "Final bonder", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P071", "Output reel force is below minimum value log time", "Manutenção", "NAO", "SIM", "Output spooler", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P072", "Desalinhamento Modulo output spooler", "Manutenção", "NAO", "SIM", "Output spooler", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P073", "Tensionamento output spooler", "Manutenção", "NAO", "SIM", "Output spooler", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P074", "Perda comunicação DDA", "Manutenção", "NAO", "SIM", "Falha Comunicação", "Unplanned Downtime", "Machine  Process Issue"],
-    ["P075", "Ar comprimido", "Manutenção", "NAO", "SIM", "Utilidades", "Unplanned Downtime", "Power Outages"],
-    ["P076", "Ar condicionado", "Manutenção", "NAO", "SIM", "Utilidades", "Unplanned Downtime", "Power Outages"],
-    ["P077", "Vácuo", "Manutenção", "NAO", "SIM", "Utilidades", "Unplanned Downtime", "Power Outages"],
-    ["P078", "Colaborador em treinamento", "Parada Operacional", "NAO", "SIM", "Falta de experiência", "Unplanned Downtime", "Labor Shortage"],
-    ["P079", "Manutenção Preventiva.", "Parada Programada", "SIM", "SIM", "Manutenção Preventiva", "Planned Downtime", "Scheduled Maintenance"],
-    ["P080", "Validações", "Parada Programada", "SIM", "SIM", "Cross Qualification", "Planned Downtime", "Trials"],
-    ["P081", "Projetos/Melhorias", "Parada Programada", "SIM", "SIM", "Projetos", "Planned Downtime", "Trials"],
-    ["P082", "Reunião.", "Parada Programada", "SIM", "SIM", "Reunião", "Planned Downtime", "Training/5s"],
-    ["P083", "No orders", "Parada Programada", "SIM", "SIM", "Sem Ordem produção", "Planned Downtime", "No orders"],
-    ["P084", "Rework.", "Produção", "NAO", "SIM", "Rework", "Unplanned Downtime", "Rework"],
-    ["P085", "Pitch fora da especicação", "Qualidade", "NAO", "SIM", "Antena", "Unplanned Downtime", "Quality Issue"],
-    ["P086", "Emenda fornecedor fora especificação", "Qualidade", "NAO", "SIM", "Antena", "Unplanned Downtime", "Quality Issue"],
-    ["P087", "Antena contaminada por cola", "Qualidade", "NAO", "SIM", "Antena", "Unplanned Downtime", "Quality Issue"],
-    ["P088", "Wafer  riscado", "Qualidade", "NAO", "SIM", "Chip", "Unplanned Downtime", "Quality Issue"],
-    ["P089", "Wafer Map e referência física diferentes", "Qualidade", "NAO", "SIM", "Chip", "Unplanned Downtime", "Quality Issue"],
-    ["P090", "Falhas", "Qualidade", "NAO", "SIM", "Interleaf", "Unplanned Downtime", "Quality Issue"],
-    ["P091", "Primeira Peça.", "Qualidade", "SIM", "SIM", "Primeira Peça", "Planned Downtime", "Quality requirements"],
-    ["P092", "Absenteísmo", "Refeição", "NAO", "SIM", "Falta de colaborador", "Unplanned Downtime", "Labor Shortage"],
-    ["P093", "Setup", "Parada Programada", "SIM", "SIM", "Setup", "Planned Downtime", "Setup/ Changerover"],
-    ["P094", "Preparar máquina para Prod", "Processo", "SIM", "SIM", "Check list Início Turno", "Planned Downtime", "Process requirements"],
+    ["P001", "Retirar rolo acabado", "Ajuste produção", "SIM", "SIM", "Abastecimento/Retirada", "Planned Downtime", "Change Raw Material", "DCA"],
+    ["P002", "Troca de antena", "Ajuste produção", "SIM", "SIM", "Abastecimento/Retirada", "Planned Downtime", "Change Raw Material", "DCA"],
+    ["P003", "Troca de Interleaf", "Ajuste produção", "SIM", "SIM", "Abastecimento/Retirada", "Planned Downtime", "Change Raw Material", "DCA"],
+    ["P004", "Troca de chip", "Ajuste produção", "SIM", "SIM", "Abastecimento/Retirada", "Planned Downtime", "Change Raw Material", "DCA"],
+    ["P005", "Troca de epóxi", "Ajuste produção", "SIM", "SIM", "Abastecimento/Retirada", "Planned Downtime", "Change Raw Material", "DCA"],
+    ["P006", "Não faz Pick up chip", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P007", "Chip Quebrado", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P008", "Chip Deslocado", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P009", "Dispençamento 2 chips na mesma antena", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P010", "Wafer riscado", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P011", "Chip Rotacionado", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P012", "Error Die Ejector XY-Movement range", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P013", "Erro Pick up (Pick chip diferente do mapa)", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P014", "Falha reconhecimento Die de Referencia ( Wafer sujo epoxi)", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P015", "Ajuste cap Retract/ Cap Gap/Needle offset", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P016", "X> axis target position out of maximum limit", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P017", "Error calculating next die position", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P018", "Check for Shift Register mismatch", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P019", "DieHDL Indexer", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P020", "Post Place", "Ajuste produção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P021", "Erro operacional", "Ajuste produção", "NAO", "SIM", "Erro operacional", "Unplanned Downtime", "Unplanned Downtime", "DCA"],
+    ["P022", "Gota Epoxi irregular ( Ovalizada, splash)", "Ajuste produção", "NAO", "SIM", "Epoxi", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P023", "Falta de gota de epoxi", "Ajuste produção", "NAO", "SIM", "Epoxi", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P024", "Tamanho da gota de epoxi", "Ajuste produção", "NAO", "SIM", "Epoxi", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P025", "Gota de Epoxi fora do centro da antena", "Ajuste produção", "NAO", "SIM", "Epoxi", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P026", "Error in Epoxi DOT placement calculation", "Ajuste produção", "NAO", "SIM", "Epoxi", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P027", "X> axis target position out of maximum limit", "Ajuste produção", "NAO", "SIM", "Epoxi", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P028", "Prebonder/Tape transport (Limpeza Sensores Buffer Pre Bonder)", "Ajuste produção", "NAO", "SIM", "Buffer", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P029", "Falta de vácuo", "Ajuste produção", "NAO", "SIM", "Buffer", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P030", "Tape Inspection", "Ajuste produção", "NAO", "SIM", "Final Bonder", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P031", "Ajuste Cover tape (Centralização e tensionamento)", "Ajuste produção", "NAO", "SIM", "Final Bonder", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P032", "Limpeza Thermodes", "Ajuste produção", "SIM", "SIM", "Final Bonder", "Planned Downtime", "Process requirements", "DCA"],
+    ["P033", "Deslocamento da Antena (ajuste das Jigs)", "Ajuste produção", "NAO", "SIM", "Final Bonder", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P034", "Thermodes temperature not in range", "Ajuste produção", "NAO", "SIM", "Final Bonder", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P035", "Troca Cover tape", "Ajuste produção", "SIM", "SIM", "Final Bonder", "Planned Downtime", "Process requirements", "DCA"],
+    ["P036", "Falha shaft (Shaft não infla etc)", "Ajuste produção", "NAO", "SIM", "Input Spooler", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P037", "Antenna enrolada no shaft motor", "Ajuste produção", "NAO", "SIM", "Input Spooler", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P038", "Antena danificada nos clamp's entrada do prebonder", "Ajuste produção", "NAO", "SIM", "Input Spooler", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P039", "Desalinhamento Antena", "Ajuste produção", "NAO", "SIM", "Input Spooler", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P040", "Limpeza do cartucho", "Ajuste produção", "SIM", "SIM", "Redbird", "Planned Downtime", "Process requirements", "DCA"],
+    ["P041", "Troca do cartucho", "Ajuste produção", "SIM", "SIM", "Redbird", "Planned Downtime", "Process requirements", "DCA"],
+    ["P042", "Error Die Ejector XY-Movement range", "Manutenção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P043", "Ajuste desalinhamento/ Telescopamento (rolo)", "Ajuste produção", "NAO", "SIM", "Output spooler", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P044", "Atualização Software", "Engenharia", "SIM", "SIM", "Atualização", "Planned Downtime", "Process requirements", "DCA"],
+    ["P045", "Teach's", "Engenharia", "SIM", "SIM", "Atualização", "Planned Downtime", "Process requirements", "DCA"],
+    ["P046", "Puncher Deslocado", "Engenharia", "SIM", "SIM", "Redbird", "Planned Downtime", "Process requirements", "DCA"],
+    ["P047", "Ajuste Receita", "Engenharia", "SIM", "SIM", "Redbird", "Planned Downtime", "Process requirements", "DCA"],
+    ["P048", "Marca Negra deslocada", "Engenharia", "SIM", "SIM", "Redbird", "Planned Downtime", "Process requirements", "DCA"],
+    ["P049", "Falta de ferramental", "Engenharia", "NAO", "SIM", "Toolings", "Unplanned Downtime", "Tooling Shortage", "DCA"],
+    ["P050", "Falta Energia.", "Falta de energia", "NAO", "SIM", "Falta Energia", "Unplanned Downtime", "Power Outages", "DCA"],
+    ["P051", "Falta Antena área produtiva", "Logística", "NAO", "SIM", "Logística", "Unplanned Downtime", "Material Shortage", "DCA"],
+    ["P052", "Falta Chip área produtiva", "Logística", "NAO", "SIM", "Logística", "Unplanned Downtime", "Material Shortage", "DCA"],
+    ["P053", "Falta Interleaf área produtiva", "Logística", "NAO", "SIM", "Logística", "Unplanned Downtime", "Material Shortage", "DCA"],
+    ["P054", "Falta Epoxi área produtiva", "Logística", "NAO", "SIM", "Logística", "Unplanned Downtime", "Material Shortage", "DCA"],
+    ["P055", "Ajuste de Pino Guia", "Manutenção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P056", "Ajuste de cameras", "Manutenção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P057", "Quebra da agulha", "Manutenção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P058", "Communication interface doesn\u2019t response in given time", "Manutenção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P059", "CDDA Die Ejector  EjectDie move axis failed, timeout during processing of a command", "Manutenção", "NAO", "SIM", "Ajuste Die Handling", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P060", "Pre Epóxy (Inspeção de teach)", "Manutençao", "NAO", "SIM", "Pre Bonder", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P061", "Pre Place (Inspeção de teach)", "Manutençao", "NAO", "SIM", "Pre Bonder", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P062", "Buffer Mismatch (Ajuste da largura buffers)", "Manutenção", "NAO", "SIM", "Buffer", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P063", "Perda de Comunicação Cameras", "Manutenção", "NAO", "SIM", "Epoxi", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P064", "Limpeza Sistema Vermes", "Manutenção", "SIM", "SIM", "Epoxi", "Planned Downtime", "Process requirements", "DCA"],
+    ["P065", "Communication interface doesn\u2019t response in given time", "Manutenção", "NAO", "SIM", "Epoxi", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P066", "Calibração/Ajuste", "Manutenção", "NAO", "SIM", "Epoxi", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P067", "Sensor Porta desalinhado", "Manutenção", "NAO", "SIM", "Portas", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P068", "Error Global Media (AirDI)", "Manutenção", "NAO", "SIM", "Air", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P069", "Ajuste thermos (Problema com temperatura)", "Manutenção", "NAO", "SIM", "Final bonder", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P070", "Desalinhamento FB", "Manutenção", "NAO", "SIM", "Final bonder", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P071", "Output reel force is below minimum value log time", "Manutenção", "NAO", "SIM", "Output spooler", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P072", "Desalinhamento Modulo output spooler", "Manutenção", "NAO", "SIM", "Output spooler", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P073", "Tensionamento output spooler", "Manutenção", "NAO", "SIM", "Output spooler", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P074", "Perda comunicação DDA", "Manutenção", "NAO", "SIM", "Falha Comunicação", "Unplanned Downtime", "Machine  Process Issue", "DCA"],
+    ["P075", "Ar comprimido", "Manutenção", "NAO", "SIM", "Utilidades", "Unplanned Downtime", "Power Outages", "DCA"],
+    ["P076", "Ar condicionado", "Manutenção", "NAO", "SIM", "Utilidades", "Unplanned Downtime", "Power Outages", "DCA"],
+    ["P077", "Vácuo", "Manutenção", "NAO", "SIM", "Utilidades", "Unplanned Downtime", "Power Outages", "DCA"],
+    ["P078", "Colaborador em treinamento", "Parada Operacional", "NAO", "SIM", "Falta de experiência", "Unplanned Downtime", "Labor Shortage", "DCA"],
+    ["P079", "Manutenção Preventiva.", "Parada Programada", "SIM", "SIM", "Manutenção Preventiva", "Planned Downtime", "Scheduled Maintenance", "DCA"],
+    ["P080", "Validações", "Parada Programada", "SIM", "SIM", "Cross Qualification", "Planned Downtime", "Trials", "DCA"],
+    ["P081", "Projetos/Melhorias", "Parada Programada", "SIM", "SIM", "Projetos", "Planned Downtime", "Trials", "DCA"],
+    ["P082", "Reunião.", "Parada Programada", "SIM", "SIM", "Reunião", "Planned Downtime", "Training/5s", "DCA"],
+    ["P083", "No orders", "Parada Programada", "SIM", "SIM", "Sem Ordem produção", "Planned Downtime", "No orders", "DCA"],
+    ["P084", "Rework.", "Produção", "NAO", "SIM", "Rework", "Unplanned Downtime", "Rework", "DCA"],
+    ["P085", "Pitch fora da especicação", "Qualidade", "NAO", "SIM", "Antena", "Unplanned Downtime", "Quality Issue", "DCA"],
+    ["P086", "Emenda fornecedor fora especificação", "Qualidade", "NAO", "SIM", "Antena", "Unplanned Downtime", "Quality Issue", "DCA"],
+    ["P087", "Antena contaminada por cola", "Qualidade", "NAO", "SIM", "Antena", "Unplanned Downtime", "Quality Issue", "DCA"],
+    ["P088", "Wafer  riscado", "Qualidade", "NAO", "SIM", "Chip", "Unplanned Downtime", "Quality Issue", "DCA"],
+    ["P089", "Wafer Map e referência física diferentes", "Qualidade", "NAO", "SIM", "Chip", "Unplanned Downtime", "Quality Issue", "DCA"],
+    ["P090", "Falhas", "Qualidade", "NAO", "SIM", "Interleaf", "Unplanned Downtime", "Quality Issue", "DCA"],
+    ["P091", "Primeira Peça.", "Qualidade", "SIM", "SIM", "Primeira Peça", "Planned Downtime", "Quality requirements", "DCA"],
+    ["P092", "Absenteísmo", "Refeição", "NAO", "SIM", "Falta de colaborador", "Unplanned Downtime", "Labor Shortage", "DCA"],
+    ["P093", "Setup", "Parada Programada", "SIM", "SIM", "Setup", "Planned Downtime", "Setup/ Changerover", "DCA"],
+    ["P094", "Preparar máquina para Prod", "Processo", "SIM", "SIM", "Check list Início Turno", "Planned Downtime", "Process requirements", "DCA"],
   ],
 };
 
@@ -912,6 +913,7 @@ const Cadastros = {
    * O lookup de eventos antigos tambem precisa do motivo depois de inativar.
    */
   motivos() {
+    garantirMotivosTipoMaquina_();
     const mapa = {};
     Repo.ler(ABAS.motivos).forEach(function (m) {
       const id = String(m.id).trim();
@@ -923,6 +925,7 @@ const Cadastros = {
         categoria2: String(m.categoria2 || ''),
         tipo1: String(m.tipo1 || ''),
         tipo2: String(m.tipo2 || ''),
+        tecnologias: normalizarTecnologiasMotivo_(m.tecnologias),
         planejada: Util.paraBooleano(m.planejada),
         ativo: Util.paraBooleano(m.ativo),
       };
@@ -1101,6 +1104,7 @@ function instalarSistema() {
   try { garantirCalendarioAd_(); } catch (e) {}
   try { garantirEpoxyChips_(); } catch (e) {}
   garantirArvorePadrao_();
+  try { garantirMotivosTipoMaquina_(); } catch (e) {}
   esconderAbasTecnicas_();
   Repo.limparMemoria();
 
@@ -2253,6 +2257,7 @@ function montarMaquina_(ctx, maquina, horas) {
     unidade: maquina.unidade,
     velocidadeReferencia: maquina.velocidadeReferencia,
     uptimeMetaPct: maquina.uptimeMetaPct || 100,
+    tecnologia: tecnologiaDaMaquina_(maquina),
     status: status,
     itemAtual: descobrirItemAtual_(ctx, maquina.id, horas, vigente),
     atual: atual,
@@ -2830,8 +2835,14 @@ const I18n = {
       novaParada: 'Nova parada',
       carregarPadrao: 'Carregar lista padrao',
       confirmCarregarPadrao: 'Substituir a arvore pela lista padrao de paradas? Motivos com o mesmo caminho (cat. 1, 2 e 3) serao atualizados; os demais serao desativados.',
-      csvDicaMotivos: 'Colunas: categoria_1, categoria_2, categoria_3, tipo_1, tipo_2. Virgula, ponto-e-virgula ou tab.',
-      csvColunasMotivos: 'categoria_1,categoria_2,categoria_3,tipo_1,tipo_2',
+      csvDicaMotivos: 'Colunas: categoria_1, categoria_2, categoria_3, tipo_1, tipo_2 e, se quiser, tecnologia. Virgula, ponto-e-virgula ou tab. Tecnologia em branco vale para todas as maquinas.',
+      csvColunasMotivos: 'categoria_1,categoria_2,categoria_3,tipo_1,tipo_2,tecnologia',
+      motivoTipo: 'Tipo de maquina',
+      motivoTipoDica: 'Marque onde esta parada aparece na justificativa. Em branco, o operador ve em todas as maquinas.',
+      motivoTipoTodas: 'Todas',
+      motivoTipoPicker: 'Paradas de {tipo}',
+      semMotivosTipo: 'Nenhuma parada cadastrada para {tipo}.',
+      motivoTipoSemTipo: 'Sem tipo',
       csvDicaCalendarioAd: 'Colunas: dia, mes, ano, semana. dia/mes/ano montam a data; semana e a semana Avery.',
       csvColunasCalendarioAd: 'dia,mes,ano,semana',
       csvDicaCarga: 'Se ja houver cadastro, o sistema pergunta se substitui tudo ou adiciona aos dados existentes.',
@@ -3314,8 +3325,14 @@ const I18n = {
       novaParada: 'New downtime reason',
       carregarPadrao: 'Load standard list',
       confirmCarregarPadrao: 'Replace the tree with the standard downtime list? Rows with the same path (cat. 1, 2 and 3) will be updated; others will be deactivated.',
-      csvDicaMotivos: 'Columns: categoria_1, categoria_2, categoria_3, tipo_1, tipo_2. Comma, semicolon or tab.',
-      csvColunasMotivos: 'categoria_1,categoria_2,categoria_3,tipo_1,tipo_2',
+      csvDicaMotivos: 'Columns: categoria_1, categoria_2, categoria_3, tipo_1, tipo_2 and, optionally, tecnologia. Comma, semicolon or tab. A blank technology shows on every machine.',
+      csvColunasMotivos: 'categoria_1,categoria_2,categoria_3,tipo_1,tipo_2,tecnologia',
+      motivoTipo: 'Machine type',
+      motivoTipoDica: 'Choose where this stop appears when justifying. Blank means the operator sees it on every machine.',
+      motivoTipoTodas: 'All',
+      motivoTipoPicker: 'Stops for {tipo}',
+      semMotivosTipo: 'No stop registered for {tipo}.',
+      motivoTipoSemTipo: 'No type',
       csvDicaCalendarioAd: 'Columns: dia, mes, ano, semana. dia/mes/ano build the date; semana is the Avery week.',
       csvColunasCalendarioAd: 'dia,mes,ano,semana',
       csvDicaCarga: 'If data already exists, the app asks whether to replace everything or add to the current records.',
@@ -3798,8 +3815,14 @@ const I18n = {
       novaParada: 'Nueva parada',
       carregarPadrao: 'Cargar lista estandar',
       confirmCarregarPadrao: 'Sustituir el arbol por la lista estandar de paradas? Los motivos con el mismo camino (cat. 1, 2 y 3) se actualizaran; los demas se desactivaran.',
-      csvDicaMotivos: 'Columnas: categoria_1, categoria_2, categoria_3, tipo_1, tipo_2. Coma, punto y coma o tab.',
-      csvColunasMotivos: 'categoria_1,categoria_2,categoria_3,tipo_1,tipo_2',
+      csvDicaMotivos: 'Columnas: categoria_1, categoria_2, categoria_3, tipo_1, tipo_2 y, si quiere, tecnologia. Coma, punto y coma o tab. Tecnologia en blanco vale para todas las maquinas.',
+      csvColunasMotivos: 'categoria_1,categoria_2,categoria_3,tipo_1,tipo_2,tecnologia',
+      motivoTipo: 'Tipo de maquina',
+      motivoTipoDica: 'Marque donde aparece esta parada al justificar. En blanco, el operador la ve en todas las maquinas.',
+      motivoTipoTodas: 'Todas',
+      motivoTipoPicker: 'Paradas de {tipo}',
+      semMotivosTipo: 'Ninguna parada registrada para {tipo}.',
+      motivoTipoSemTipo: 'Sin tipo',
       csvDicaCalendarioAd: 'Columnas: dia, mes, ano, semana. dia/mes/ano arman la fecha; semana es la semana Avery.',
       csvColunasCalendarioAd: 'dia,mes,ano,semana',
       csvDicaCarga: 'Si ya hay cadastro, el sistema pregunta si sustituye todo o agrega a los datos existentes.',
@@ -4534,6 +4557,78 @@ function marcarArvorePadraoSeCobre_(linhas) {
   gravarConfig_('arvore_paradas_id', ARVORE_PADRAO_ID, 'Identificador da arvore padrao de paradas aplicada');
 }
 
+/**
+ * A arvore que veio no CSV e da DCA. Motivo sem tipo aparece em toda
+ * maquina; este passo marca so as folhas do padrao que ainda estao em
+ * branco, uma vez. Parada criada depois, ou com tipo ja escolhido, fica.
+ */
+function garantirMotivosTipoMaquina_() {
+  garantirColunaMotivos_();
+  if (Repo._memoria._motivosTipoOk) return 0;
+  const marca = 'dca-1';
+  if (Cadastros.config().texto('motivos_tipo_maquina_id', '') === marca) {
+    Repo._memoria._motivosTipoOk = true;
+    return 0;
+  }
+  const desejados = {};
+  SEMENTES.motivos.forEach(function (row) {
+    desejados[chaveMotivoArvore_({
+      categoria: row[2],
+      categoria2: row[5],
+      descricao: row[1],
+    })] = true;
+  });
+  let n = 0;
+  Repo.ler(ABAS.motivos).forEach(function (m) {
+    if (String(m.tecnologias || '').trim()) return;
+    if (!m._linha || !desejados[chaveMotivoArvore_(m)]) return;
+    Repo.atualizarCelula(ABAS.motivos, m._linha, 'tecnologias', 'DCA');
+    n++;
+  });
+  gravarConfig_(
+    'motivos_tipo_maquina_id', marca,
+    'Arvore padrao marcada como DCA. Motivo sem tipo continua em todas as maquinas.'
+  );
+  Repo._memoria._motivosTipoOk = true;
+  if (n) CachePainel.invalidar();
+  return n;
+}
+
+function garantirColunaMotivos_() {
+  if (Repo._memoria._motivosColuna) return;
+  const aba = Repo.aba(ABAS.motivos, true);
+  const colunas = ESQUEMA[ABAS.motivos];
+  let ok = aba.getMaxColumns() >= colunas.length;
+  if (ok) {
+    const cabecalho = aba.getRange(1, 1, 1, colunas.length).getValues()[0];
+    ok = String(cabecalho[colunas.length - 1] || '').trim() === colunas[colunas.length - 1];
+  }
+  Repo._memoria._motivosColuna = true;
+  if (ok) return;
+  aplicarCabecalho_(aba, colunas);
+  delete Repo._memoria[ABAS.motivos];
+}
+
+/** Lista de tipos, sem duplicar e na ordem escrita. Vazio = todas as maquinas. */
+function normalizarTecnologiasMotivo_(valor) {
+  const bruto = Array.isArray(valor) ? valor.join(';') : String(valor || '');
+  const vistos = {};
+  const lista = [];
+  bruto.split(/[;,|/]/).forEach(function (parte) {
+    const tipo = String(parte || '').trim();
+    if (!tipo) return;
+    const chave = tipo.toUpperCase();
+    if (vistos[chave]) return;
+    vistos[chave] = true;
+    lista.push(tipo);
+  });
+  return lista;
+}
+
+function textoTecnologiasMotivo_(valor) {
+  return normalizarTecnologiasMotivo_(valor).join(';');
+}
+
 function arvoreCobreOPadrao_(linhas) {
   const desejados = {};
   SEMENTES.motivos.forEach(function (row) {
@@ -5160,6 +5255,7 @@ function parsearDataCsv_(valor) {
 }
 
 function listarMotivosCadastro_() {
+  garantirMotivosTipoMaquina_();
   return Repo.ler(ABAS.motivos).map(function (m) {
     return {
       id: String(m.id || '').trim(),
@@ -5168,6 +5264,7 @@ function listarMotivosCadastro_() {
       categoria2: String(m.categoria2 || ''),
       tipo1: String(m.tipo1 || ''),
       tipo2: String(m.tipo2 || ''),
+      tecnologias: normalizarTecnologiasMotivo_(m.tecnologias),
       planejada: Util.paraBooleano(m.planejada),
       ativo: Util.paraBooleano(m.ativo),
       _linha: m._linha,
@@ -5203,7 +5300,7 @@ function montarRegistroMotivo_(payload) {
   const tipo1 = String(payload.tipo1 || '').trim();
   const tipo2 = String(payload.tipo2 || '').trim();
   const planejada = planejadaDeTipo1_(tipo1, payload.planejada);
-  return {
+  const registro = {
     id: String(payload.id || '').trim() || Util.gerarId('P'),
     descricao: descricao,
     categoria: categoria,
@@ -5213,9 +5310,14 @@ function montarRegistroMotivo_(payload) {
     planejada: planejada ? 'SIM' : 'NAO',
     ativo: payload.ativo === false || payload.ativo === 'NAO' ? 'NAO' : 'SIM',
   };
+  if (payload.tecnologias !== undefined) {
+    registro.tecnologias = textoTecnologiasMotivo_(payload.tecnologias);
+  }
+  return registro;
 }
 
 function persistirMotivo_(registro) {
+  garantirColunaMotivos_();
   const existente = localizarPorCampo_(ABAS.motivos, 'id', registro.id);
   if (existente) Repo.atualizarRegistro(ABAS.motivos, existente._linha, registro);
   else Repo.acrescentar(ABAS.motivos, [registro]);
@@ -5234,6 +5336,7 @@ function registroMotivoDeLinha_(row) {
     tipo2: String(obj.tipo2 || '').trim(),
     planejada: obj.planejada,
     ativo: obj.ativo || 'SIM',
+    tecnologias: textoTecnologiasMotivo_(obj.tecnologias),
   };
 }
 
@@ -5276,7 +5379,7 @@ function gravarMotivosImportados_(linhas) {
   });
   let gravados = 0;
   linhas.forEach(function (l) {
-    const registro = montarRegistroMotivo_({
+    const payload = {
       id: l.id,
       descricao: l.descricao,
       categoria: l.categoria,
@@ -5285,7 +5388,9 @@ function gravarMotivosImportados_(linhas) {
       tipo2: l.tipo2,
       planejada: l.planejada,
       ativo: l.ativo,
-    });
+    };
+    if (l.tecnologias !== undefined) payload.tecnologias = l.tecnologias;
+    const registro = montarRegistroMotivo_(payload);
     const chave = chaveMotivoArvore_(registro);
     const existente = porChave[chave];
     if (existente) {
@@ -5305,18 +5410,19 @@ function gravarMotivosImportados_(linhas) {
 
 function modeloCsvMotivos_() {
   return [
-    'categoria_1,categoria_2,categoria_3,tipo_1,tipo_2',
-    'Ajuste producao,Abastecimento/Retirada,Retirar rolo acabado,Planned Downtime,Change Raw Material',
-    'Ajuste producao,Ajuste Die Handling,Chip Quebrado,Unplanned Downtime,Machine Process Issue',
-    'Parada Programada,Setup,Setup,Planned Downtime,Setup/ Changerover',
+    'categoria_1,categoria_2,categoria_3,tipo_1,tipo_2,tecnologia',
+    'Ajuste producao,Abastecimento/Retirada,Retirar rolo acabado,Planned Downtime,Change Raw Material,DCA',
+    'Ajuste producao,Ajuste Die Handling,Chip Quebrado,Unplanned Downtime,Machine Process Issue,DCA',
+    'Parada Programada,Sem Ordem producao,No orders,Planned Downtime,No orders,',
     '',
   ].join('\n');
 }
 
 /**
  * Cabecalho: categoria_1, categoria_2, categoria_3, tipo_1, tipo_2.
- * tipo_1/tipo_2 sao referencia para filtros futuros e nao aparecem na
- * justificativa. Virgula, ponto-e-virgula ou tab.
+ * tecnologia e opcional (DCA, Converting ou varios separados por ;).
+ * Em branco, a parada aparece em todas as maquinas. Sem a coluna, o tipo
+ * ja gravado nao muda. Virgula, ponto-e-virgula ou tab.
  */
 function parsearCsvMotivos(texto) {
   const resultado = { linhas: [], erros: [] };
@@ -5338,6 +5444,7 @@ function parsearCsvMotivos(texto) {
   const iC3 = indiceColuna_(cabecalho, ['categoria3', 'cat3', 'descricao', 'parada', 'motivo']);
   const iT1 = indiceColuna_(cabecalho, ['tipo1', 'type1']);
   const iT2 = indiceColuna_(cabecalho, ['tipo2', 'type2']);
+  const iTec = indiceColuna_(cabecalho, ['tecnologia', 'tecnologias', 'tipomaquina', 'tipodemaquina']);
 
   if (iC1 < 0 || iC3 < 0) {
     resultado.erros.push(
@@ -5365,7 +5472,7 @@ function parsearCsvMotivos(texto) {
       continue;
     }
     const chave = chaveMotivoArvore_({ categoria: c1, categoria2: c2, descricao: c3 });
-    vistos[chave] = {
+    const item = {
       categoria: c1,
       categoria2: c2,
       descricao: c3,
@@ -5374,6 +5481,8 @@ function parsearCsvMotivos(texto) {
       planejada: planejadaDeTipo1_(t1),
       ativo: 'SIM',
     };
+    if (iTec >= 0) item.tecnologias = String(linha[iTec] || '').trim();
+    vistos[chave] = item;
   }
 
   Object.keys(vistos).forEach(function (k) { resultado.linhas.push(vistos[k]); });
@@ -5843,6 +5952,7 @@ function catalogoMotivosChao_(motivosMapa) {
       descricao: m.descricao,
       categoria: m.categoria,
       categoria2: m.categoria2 || '',
+      tecnologias: normalizarTecnologiasMotivo_(m.tecnologias),
       planejada: !!m.planejada,
       ativo: m.ativo !== false,
     };
@@ -5961,6 +6071,7 @@ function serializarMaquinasChao_(plantaId, agora, inicioDia, itensMapa, motivosM
       id: maquina.id,
       nome: maquina.nome,
       setor: maquina.setor,
+      tecnologia: tecnologiaDaMaquina_(maquina),
       status: status,
       aberto: aberto,
       ultimoItem: ultimo,
